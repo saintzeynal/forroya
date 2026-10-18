@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a2a4a">
+<title>Gəmi Oyunları</title>
+<style>
+/* Gəmi Oyunları — hub. Night harbour: deep navy sky, turquoise waves, warm lantern-orange accents. */
+:root{
+  --ui:"Trebuchet MS","Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  --ink:#071a30;--amber:#ffc23d;--foam:#d9f4ff;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;min-height:100vh;color:#fff;font-family:var(--ui);-webkit-tap-highlight-color:transparent;overflow-x:hidden;
+  background:#0b2e56;
+}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:linear-gradient(180deg,#06152c 0%,#0b2e56 38%,#12628a 70%,#1a8aa3 100%)}
+/* twinkling stars */
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    radial-gradient(1.6px 1.6px at 12% 14%,#fff,transparent),radial-gradient(1.2px 1.2px at 28% 8%,#fff,transparent),
+    radial-gradient(1.8px 1.8px at 44% 20%,#fff,transparent),radial-gradient(1.2px 1.2px at 63% 10%,#fff,transparent),
+    radial-gradient(1.6px 1.6px at 78% 18%,#fff,transparent),radial-gradient(1.2px 1.2px at 90% 6%,#fff,transparent),
+    radial-gradient(1.4px 1.4px at 6% 32%,#fff,transparent),radial-gradient(1.2px 1.2px at 52% 34%,#fff,transparent),
+    radial-gradient(1.4px 1.4px at 94% 30%,#fff,transparent);
+  animation:twinkle 4s ease-in-out infinite alternate;opacity:.8}
+@keyframes twinkle{from{opacity:.35}to{opacity:.95}}
+.moon{position:fixed;right:9%;top:6%;width:64px;height:64px;border-radius:50%;z-index:0;pointer-events:none;
+  background:radial-gradient(circle at 36% 34%,#fffbe2,#f1e6a6 60%,#d9c978);box-shadow:0 0 50px 14px rgba(255,244,190,.3)}
+.moon::after{content:"";position:absolute;left:30%;top:46%;width:14px;height:14px;border-radius:50%;background:rgba(150,130,60,.25);box-shadow:20px -14px 0 -3px rgba(150,130,60,.2)}
+
+main{position:relative;z-index:2;max-width:980px;margin:0 auto;padding:max(18px,env(safe-area-inset-top)) 16px 150px}
+header{text-align:center;padding-top:6px}
+h1{
+  margin:6px 0 2px;font:900 italic clamp(38px,10vw,72px)/1 "Arial Black",Impact,system-ui,sans-serif;letter-spacing:.03em;
+  background:linear-gradient(180deg,#fff 10%,#c9ecff 45%,#5db6ff 52%,#d6f2ff 56%,#fff 90%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 3px 0 #05223f) drop-shadow(0 0 18px rgba(93,182,255,.55));
+}
+.sub{margin:6px auto 0;max-width:520px;font-size:clamp(14px,3.6vw,17px);color:var(--foam);opacity:.92;line-height:1.45}
+
+/* the bobbing ship */
+.ship{display:block;margin:6px auto 0;width:min(78%,360px);height:auto;overflow:visible;transform-origin:50% 85%;animation:bob 5s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-1.6deg)}50%{transform:translateY(7px) rotate(1.6deg)}}
+.smoke circle{fill:rgba(220,235,250,.7);animation:smoke 3.4s ease-out infinite;transform-origin:center;transform-box:fill-box}
+.smoke circle:nth-child(2){animation-delay:1.1s}.smoke circle:nth-child(3){animation-delay:2.2s}
+@keyframes smoke{0%{transform:translate(0,0) scale(.4);opacity:.9}100%{transform:translate(26px,-46px) scale(1.6);opacity:0}}
+
+/* game cards */
+.grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:22px}
+@media (min-width:640px){.grid{grid-template-columns:1fr 1fr}}
+.card{
+  position:relative;display:flex;gap:14px;align-items:center;padding:14px 16px 14px 14px;border-radius:22px;text-decoration:none;color:#fff;
+  background:linear-gradient(135deg,rgba(255,255,255,.16),rgba(255,255,255,.06));
+  box-shadow:0 0 0 2px rgba(190,235,255,.35),0 12px 26px rgba(0,10,30,.4),inset 0 1px 0 rgba(255,255,255,.35);
+  
+  transition:transform .2s cubic-bezier(.3,1.5,.5,1),box-shadow .2s;
+  opacity:0;transform:translateY(24px);animation:cardIn .6s cubic-bezier(.2,1.3,.4,1) forwards;
+}
+.card:nth-child(1){animation-delay:.05s}.card:nth-child(2){animation-delay:.15s}.card:nth-child(3){animation-delay:.25s}
+.card:nth-child(4){animation-delay:.35s}.card:nth-child(5){animation-delay:.45s}
+@keyframes cardIn{to{opacity:1;transform:none}}
+.card:hover{transform:translateY(-5px) rotate(-.4deg);box-shadow:0 0 0 2px var(--c),0 18px 34px rgba(0,10,30,.5),inset 0 1px 0 rgba(255,255,255,.4)}
+.card:active{transform:scale(.98)}
+.card:focus-visible{outline:3px solid var(--amber);outline-offset:3px}
+.ico{
+  flex:none;width:84px;height:84px;border-radius:20px;display:grid;place-items:center;
+  background:linear-gradient(145deg,var(--c),var(--c2));box-shadow:0 5px 0 rgba(0,0,0,.28),inset 0 2px 0 rgba(255,255,255,.4);
+  transition:transform .25s;
+}
+.card:hover .ico{transform:rotate(-6deg) scale(1.06)}
+.ico svg{width:66px;height:66px}
+.txt{min-width:0;flex:1}
+.tag{display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:800;letter-spacing:.05em;color:var(--ink);background:var(--c);margin-bottom:5px}
+.name{margin:0;font:900 22px/1.1 "Arial Black",Impact,system-ui,sans-serif;letter-spacing:.01em;text-shadow:0 2px 0 rgba(0,0,0,.3)}
+.desc{margin:5px 0 8px;font-size:13.5px;line-height:1.4;color:var(--foam);opacity:.95}
+.best{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:12px;font-size:12.5px;font-weight:800;background:rgba(3,20,40,.55);color:var(--amber);box-shadow:inset 0 0 0 1.5px rgba(255,194,61,.45)}
+.best.none{color:#a9cbe0;box-shadow:inset 0 0 0 1.5px rgba(169,203,224,.3);font-weight:700}
+.go{position:absolute;right:14px;top:12px;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;transition:transform .2s,background .2s}
+.go svg{width:14px;height:14px;fill:#fff}
+.card:hover .go{transform:translateX(3px);background:var(--c)}
+.card:hover .go svg{fill:var(--ink)}
+@media (hover:hover){.card{-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}}
+@media (pointer:coarse){.card{min-height:108px;background:linear-gradient(135deg,rgba(255,255,255,.2),rgba(255,255,255,.1))}}
+.note{margin:26px 0 0;text-align:center;font-size:13px;color:var(--foam);opacity:.8}
+
+/* animated waves */
+.waves{position:fixed;left:0;right:0;bottom:0;height:130px;z-index:1;pointer-events:none;overflow:hidden}
+.waves svg{position:absolute;left:0;bottom:0;width:200%;height:100%}
+.w1{animation:wave 14s linear infinite}.w2{animation:wave 9s linear infinite reverse;opacity:.9}.w3{animation:wave 6s linear infinite}
+@keyframes wave{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.stars,.ship,.smoke circle,.w1,.w2,.w3,.card{animation:none;opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="stars"></div><div class="moon"></div>
+
+<main>
+  <header>
+    <h1>Gəmidə darıxanda başını qat</h1>
+    <p class="sub">hamısı internetsiz işləyir.</p>
+
+    <!-- cargo ship silhouette (original artwork, drawn in SVG) -->
+    <svg class="ship" viewBox="0 0 360 170" aria-hidden="true">
+      <g class="smoke"><circle cx="262" cy="22" r="9"/><circle cx="262" cy="22" r="9"/><circle cx="262" cy="22" r="9"/></g>
+      <g stroke="#041a33" stroke-width="3" stroke-linejoin="round">
+        <rect x="90" y="52" width="40" height="26" rx="2" fill="#e5483d"/><rect x="132" y="52" width="40" height="26" rx="2" fill="#2f7fe0"/><rect x="174" y="52" width="40" height="26" rx="2" fill="#f2b630"/>
+        <rect x="104" y="26" width="40" height="26" rx="2" fill="#35a86b"/><rect x="146" y="26" width="40" height="26" rx="2" fill="#e5483d"/>
+        <path d="M120 38h4M120 62h4M162 38h4M162 62h4M204 62h4" stroke="rgba(0,0,0,.25)" stroke-width="2"/>
+        <rect x="232" y="40" width="50" height="38" rx="3" fill="#f4f1e6"/>
+        <rect x="238" y="46" width="38" height="9" rx="2" fill="#3b78b8"/>
+        <rect x="246" y="24" width="14" height="16" fill="#f2b630"/><rect x="246" y="24" width="14" height="5" fill="#041a33"/>
+        <path d="M30 78h300l-30 50H62z" fill="#243a5c"/>
+        <path d="M34 84h292" stroke="#c0392b" stroke-width="7"/>
+        <circle cx="90" cy="102" r="4" fill="#ffd77a"/><circle cx="124" cy="102" r="4" fill="#ffd77a"/><circle cx="158" cy="102" r="4" fill="#ffd77a"/><circle cx="192" cy="102" r="4" fill="#ffd77a"/><circle cx="226" cy="102" r="4" fill="#ffd77a"/>
+        <path d="M252 24V10M252 12l16 4-16 4" fill="none"/>
+      </g>
+      <path d="M20 136q22-10 44 0t44 0 44 0 44 0 44 0 44 0 44 0 30-4" fill="none" stroke="rgba(190,235,255,.7)" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+  </header>
+
+  <section class="grid" id="grid">
+    <a class="card" href="oyun1-deniz-yolu.html" style="--c:#4ec3ff;--c2:#1c6fd0" data-game="1">
+      <div class="ico"><svg viewBox="0 0 64 64"><path d="M6 50q6-5 13 0t13 0 13 0 13 0" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7"/><path d="M32 6c7 8 9 20 8 36H24c-1-16 1-28 8-36z" fill="#e5483d" stroke="#041a33" stroke-width="3" stroke-linejoin="round"/><rect x="27" y="22" width="10" height="9" rx="2" fill="#f4f1e6" stroke="#041a33" stroke-width="2.4"/><circle cx="52" cy="20" r="7" fill="#7b8794" stroke="#041a33" stroke-width="3"/><circle cx="11" cy="28" r="5" fill="#f2b630" stroke="#041a33" stroke-width="3"/></svg></div>
+      <div class="txt"><span class="tag">ARCADE</span><h2 class="name">Dəniz Yolu</h2>
+        <p class="desc">Qayalardan qaç, konteynerləri topla və rekordunu yenilə.</p><span class="best none" id="best1">Hələ oynanılmayıb</span></div>
+      <span class="go"><svg viewBox="0 0 24 24"><path d="M8.6 5.4 7.2 6.8 12.4 12l-5.2 5.2 1.4 1.4L15.2 12z"/></svg></span>
+    </a>
+
+    <a class="card" href="oyun2-praktikani-doy.html" style="--c:#ff7a6a;--c2:#d6322b" data-game="2">
+      <div class="ico"><svg viewBox="0 0 64 64"><path d="M16 50c-6-12-6-30 10-36 18-6 28 8 24 26-2 8-4 14-4 18H20z" fill="#fff" stroke="#041a33" stroke-width="3" stroke-linejoin="round"/><path d="M16 50c-6-12-6-30 10-36 18-6 28 8 24 26-2 8-4 14-4 18H20z" fill="#e5483d" stroke="#041a33" stroke-width="3" stroke-linejoin="round"/><rect x="18" y="50" width="30" height="10" rx="3" fill="#f4f1e6" stroke="#041a33" stroke-width="3"/><path d="M20 30c-8-2-10-12-2-14 6-1 8 6 6 10z" fill="#c0302a" stroke="#041a33" stroke-width="3" stroke-linejoin="round"/><path d="M34 20c6 0 10 4 10 8" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity=".7"/></svg></div>
+      <div class="txt"><span class="tag">STRES ƏLEYHİNƏ</span><h2 class="name">Praktikanı Döy</h2>
+        <p class="desc">Gülməli silahlar, cizgi effektləri və sonda isə mehriban müalicə.</p><span class="best none" id="best2">Hələ oynanılmayıb</span></div>
+      <span class="go"><svg viewBox="0 0 24 24"><path d="M8.6 5.4 7.2 6.8 12.4 12l-5.2 5.2 1.4 1.4L15.2 12z"/></svg></span>
+    </a>
+
+    <a class="card" href="oyun3-liman-bulmacasi.html" style="--c:#ffc23d;--c2:#e0891a" data-game="3">
+      <div class="ico"><svg viewBox="0 0 64 64"><rect x="6" y="22" width="30" height="26" rx="3" fill="#e5483d" stroke="#041a33" stroke-width="3"/><path d="M14 24v22M21 24v22M28 24v22" stroke="rgba(0,0,0,.3)" stroke-width="2.5"/><rect x="30" y="34" width="28" height="22" rx="3" fill="#2f7fe0" stroke="#041a33" stroke-width="3"/><path d="M37 36v18M44 36v18M51 36v18" stroke="rgba(0,0,0,.3)" stroke-width="2.5"/><path d="M8 12h24M32 12l-6-6M32 12l-6 6" fill="none" stroke="#041a33" stroke-width="3" stroke-linecap="round"/></svg></div>
+      <div class="txt"><span class="tag">BULMACA</span><h2 class="name">Liman arcade</h2>
+        <p class="desc">Konteynerləri işarələnmiş yerlərə it. 15 səviyyə, getdikcə çətinləşir.</p><span class="best none" id="best3">Hələ oynanılmayıb</span></div>
+      <span class="go"><svg viewBox="0 0 24 24"><path d="M8.6 5.4 7.2 6.8 12.4 12l-5.2 5.2 1.4 1.4L15.2 12z"/></svg></span>
+    </a>
+
+    <a class="card" href="oyun4-deniz-doyusu.html" style="--c:#ff8a5c;--c2:#c8381f" data-game="4">
+      <div class="ico"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="22" fill="#0b2a40" stroke="#041a33" stroke-width="3"/><circle cx="32" cy="32" r="22" fill="none" stroke="#fff" stroke-width="2.5" opacity=".8"/><circle cx="32" cy="32" r="11" fill="none" stroke="#fff" stroke-width="2.2" opacity=".7"/><path d="M32 4v14M32 46v14M4 32h14M46 32h14" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#ff6a2b" stroke="#041a33" stroke-width="2"/></svg></div>
+      <div class="txt"><span class="tag">TAKTİKA</span><h2 class="name">Dəniz Döyüşü</h2>
+        <p class="desc">Donanmanı yerləşdir, düşmən gəmilərini tap və batır. Kompüterə qarşı 3 səviyyə.</p><span class="best none" id="best4">Hələ oynanılmayıb</span></div>
+      <span class="go"><svg viewBox="0 0 24 24"><path d="M8.6 5.4 7.2 6.8 12.4 12l-5.2 5.2 1.4 1.4L15.2 12z"/></svg></span>
+    </a>
+
+    <a class="card" href="oyun5-baliq-tutma.html" style="--c:#6be0c0;--c2:#1c9a8a" data-game="5">
+      <div class="ico"><svg viewBox="0 0 64 64"><path d="M10 34c8-14 26-14 36 0-10 14-28 14-36 0z" fill="#ff9a2e" stroke="#041a33" stroke-width="3" stroke-linejoin="round"/><path d="M46 34l12-10v20z" fill="#ff7a1f" stroke="#041a33" stroke-width="3" stroke-linejoin="round"/><circle cx="21" cy="31" r="3.2" fill="#fff" stroke="#041a33" stroke-width="2"/><path d="M30 24q4 6 0 20" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity=".75"/><path d="M44 6v8" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M40 4h8" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0"/></svg></div>
+      <div class="txt"><span class="tag">SAKİT</span><h2 class="name">Balıq Tutma</h2>
+        <p class="desc">17 növ balıq, gün və gecə dövrü. Heç bir təcili iş yoxdur.</p><span class="best none" id="best5">Hələ oynanılmayıb</span></div>
+      <span class="go"><svg viewBox="0 0 24 24"><path d="M8.6 5.4 7.2 6.8 12.4 12l-5.2 5.2 1.4 1.4L15.2 12z"/></svg></span>
+    </a>
+  </section>
+
+  <p class="note">Oyunlar telefonda və kompüterdə işləyir. Hər oyunda səs düyməsi və menyuya qayıtma düyməsi var.</p>
+</main>
+
+<div class="waves" aria-hidden="true">
+  <svg class="w1" viewBox="0 0 1440 130" preserveAspectRatio="none"><path d="M0 60q90-40 180 0t180 0 180 0 180 0 180 0 180 0 180 0 180 0V130H0z" fill="rgba(60,170,200,.5)"/></svg>
+  <svg class="w2" viewBox="0 0 1440 130" preserveAspectRatio="none"><path d="M0 80q60-30 120 0t120 0 120 0 120 0 120 0 120 0 120 0 120 0 120 0 120 0 120 0 120 0V130H0z" fill="rgba(30,130,170,.65)"/></svg>
+  <svg class="w3" viewBox="0 0 1440 130" preserveAspectRatio="none"><path d="M0 100q45-24 90 0t90 0 90 0 90 0 90 0 90 0 90 0 90 0 90 0 90 0 90 0 90 0 90 0 90 0 90 0 90 0 90 0V130H0z" fill="rgba(8,70,110,.85)"/></svg>
+</div>
+
+<script>
+/* Reads each game's saved progress from localStorage (every game uses its own key prefix).
+   Everything is wrapped in try/catch: if the browser blocks storage the cards simply show "not played yet". */
+(function () {
+  function read(key, def) {
+    try { var raw = localStorage.getItem(key); return raw === null ? def : JSON.parse(raw); } catch (e) { return def; }
+  }
+  function show(id, text) {
+    var el = document.getElementById(id);
+    if (!el || !text) return;
+    el.textContent = text; el.classList.remove('none');
+  }
+  // Game 1: best score (the very first version used the plain key "best")
+  var b1 = +read('gemi_oyun1_best', 0) || +read('best', 0);
+  if (b1 > 0) show('best1', 'Rekord: ' + b1);
+  // Game 2: lifetime hit counter
+  var hits = +read('gemi_oyun2_hits', 0);
+  if (hits > 0) show('best2', 'Cəmi zərbə: ' + hits);
+  // Game 3: completed levels
+  var best3 = read('gemi_oyun3_best', {}), done = best3 && typeof best3 === 'object' ? Object.keys(best3).length : 0;
+  if (done > 0) show('best3', 'Tamamlanıb: ' + done + '/15 səviyyə');
+  // Game 4: naval battle record
+  var st4 = read('gemi_oyun4d_stats', null);
+  if (st4 && (st4.wins || st4.losses)) show('best4', 'Qələbə: ' + (st4.wins || 0) + ' · Məğlubiyyət: ' + (st4.losses || 0));
+  // Game 5: album
+  var col = read('gemi_oyun5_col', {}), n5 = col && typeof col === 'object' ? Object.keys(col).length : 0;
+  if (n5 > 0) show('best5', 'Albom: ' + n5 + '/17 balıq');
+})();
+</script>
+</body>
+</html>

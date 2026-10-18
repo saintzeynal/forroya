@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#071436">
+<title>Praktikanı Döy</title>
+<style>
+/* =====================================================================
+   PRAKTİKANI DÖY — retro-futuristic gadget panel (dark blue, glossy)
+   ===================================================================== */
+:root{
+  --ink:#2a1740;
+  --ui:"Trebuchet MS","Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  --cyan:#59d8ff;
+  --vh:1vh;
+  --wcol:clamp(64px,18vw,118px);      /* weapons column */
+  --kcol:clamp(34px,9.5vw,48px);      /* K.O. meter column */
+  --arrow-h:clamp(58px,calc(12 * var(--vh)),100px);
+  --face:max(140px,min(calc(100vw - 40px - var(--wcol) - var(--kcol)),calc(88 * var(--vh) - 232px),470px));
+  --ko-size:clamp(24px,calc(var(--face) / 7.4),40px);
+}
+@supports (height:1dvh){ :root{ --vh:1dvh; } }
+
+*{box-sizing:border-box}
+html,body{
+  height:100%;margin:0;overflow:hidden;background:#030818;color:#fff;
+  font-family:"Trebuchet MS","Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  touch-action:manipulation;overscroll-behavior:none;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+}
+body{
+  background:
+    radial-gradient(120% 80% at 50% -10%,#1a3f94 0%,#0a1c4d 42%,#02060f 100%);
+}
+/* faint animated sci-fi grid behind the gadget */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.55;
+  background-image:
+    linear-gradient(rgba(89,216,255,.09) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(89,216,255,.09) 1px,transparent 1px);
+  background-size:38px 38px;
+  -webkit-mask-image:radial-gradient(70% 70% at 50% 45%,#000 20%,transparent 100%);
+  mask-image:radial-gradient(70% 70% at 50% 45%,#000 20%,transparent 100%);
+  animation:gridMove 12s linear infinite;
+}
+@keyframes gridMove{to{background-position:38px 38px,38px 38px}}
+
+#app{
+  position:relative;height:calc(100 * var(--vh));
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  padding:6px 6px max(6px,env(safe-area-inset-bottom));
+}
+
+/* ---------- utility bar (menu + sound) ---------- */
+.util{
+  display:flex;justify-content:space-between;align-items:center;
+  width:min(100%,calc(var(--face) + var(--wcol) + var(--kcol) + 28px));
+}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;
+  border:0;cursor:pointer;color:#cfeeff;text-decoration:none;font:700 13px/1 var(--ui);
+  background:linear-gradient(#17367f,#0b1d52);
+  box-shadow:0 0 0 2px #2f5bb8,0 3px 0 #040c28,inset 0 1px 0 rgba(255,255,255,.3);
+  transition:transform .08s,filter .15s;
+}
+.chip:hover{filter:brightness(1.2)}
+.chip:active{transform:translateY(2px)}
+.chip svg{width:18px;height:18px;fill:currentColor}
+#soundBtn{width:38px;padding:0;justify-content:center}
+#soundBtn .off{display:none}
+#soundBtn.muted .on{display:none}
+#soundBtn.muted .off{display:block}
+#soundBtn.muted{color:#ff9a9a}
+
+/* ---------- shaker wraps the gadget so we can shake the whole screen ---------- */
+#shaker{will-change:transform;width:100%;display:flex;justify-content:center}
+
+.gadget{
+  position:relative;overflow:hidden;
+  width:min(100%,calc(var(--face) + var(--wcol) + var(--kcol) + 28px));
+  padding:10px 10px 8px;border-radius:26px;
+  background:linear-gradient(160deg,#1f4a9e 0%,#0f2863 40%,#081843 100%);
+  box-shadow:0 0 0 3px #050d26,0 0 0 5px #3d73d6,0 16px 44px rgba(0,0,0,.65),
+    inset 0 2px 0 rgba(255,255,255,.4),inset 0 -12px 26px rgba(0,0,0,.4);
+}
+/* glossy sheen across the top */
+.gadget::before{
+  content:"";position:absolute;left:-15%;right:-15%;top:-34%;height:56%;pointer-events:none;z-index:0;
+  background:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,0));
+  border-radius:50%;
+}
+.screw{
+  position:absolute;width:11px;height:11px;border-radius:50%;z-index:1;pointer-events:none;
+  background:radial-gradient(circle at 35% 30%,#dfeaff 0,#7f9fd8 45%,#2a4a8f 100%);
+  box-shadow:0 1px 2px rgba(0,0,0,.6);
+}
+.screw::after{content:"";position:absolute;left:2px;right:2px;top:5px;height:1.5px;background:#1a2f66;transform:rotate(35deg)}
+.screw.a{left:9px;top:9px}.screw.b{right:9px;top:9px}.screw.c{left:9px;bottom:9px}.screw.d{right:9px;bottom:9px}
+
+.title{
+  position:relative;z-index:2;margin:2px 0 0;text-align:center;
+  font:900 italic clamp(22px,7.2vw,40px)/1.05 "Arial Black",Impact,system-ui,sans-serif;letter-spacing:.04em;
+  background:linear-gradient(180deg,#fff 0%,#c8ecff 36%,#4fa6ff 50%,#cdf1ff 53%,#fff 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 2px 0 #081843) drop-shadow(0 0 10px rgba(89,216,255,.65));
+}
+
+.toprow{position:relative;z-index:2;display:flex;align-items:center;gap:8px;margin:6px 0 4px}
+.victim{
+  flex:1;min-width:0;padding:7px 14px;border-radius:999px;
+  background:linear-gradient(#050f2c,#0a1d4d);color:#79e0ff;
+  box-shadow:inset 0 2px 7px #000,0 0 0 2px #2d5ab6;
+  font:800 clamp(12px,3.6vw,16px)/1.1 var(--ui);letter-spacing:.03em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.victim b{color:#ffe27a;font-weight:900}
+.heal{
+  display:flex;align-items:center;gap:5px;border:0;cursor:pointer;
+  padding:4px 11px 4px 6px;border-radius:14px;
+  background:linear-gradient(#ffffff,#cfe5ff);color:#b3101c;
+  font:900 clamp(10px,3vw,13px)/1.05 "Arial Black",system-ui,sans-serif;text-align:left;
+  box-shadow:0 3px 0 #5f86c4,0 0 0 3px #1c3f8c;
+  transition:transform .08s;
+}
+.heal:active{transform:translateY(2px);box-shadow:0 1px 0 #5f86c4,0 0 0 3px #1c3f8c}
+.heal svg{width:clamp(26px,8vw,34px);height:clamp(26px,8vw,34px);flex:none}
+.heal.pulse{animation:pulse .7s ease-in-out infinite}
+@keyframes pulse{
+  0%,100%{transform:scale(1);box-shadow:0 3px 0 #5f86c4,0 0 0 3px #1c3f8c,0 0 0 0 rgba(255,80,80,.0)}
+  50%{transform:scale(1.1);box-shadow:0 3px 0 #5f86c4,0 0 0 3px #ff5a5a,0 0 22px 8px rgba(255,80,80,.65)}
+}
+
+/* ---------- stage: weapons | face | K.O. meter ---------- */
+.stage{
+  position:relative;z-index:5;display:grid;
+  grid-template-columns:var(--wcol) minmax(0,1fr) var(--kcol);column-gap:4px;align-items:center;
+  min-height:calc(var(--ko-size) * 7 + 24px);
+  margin:4px 0;
+}
+.facebox{width:var(--face);height:var(--face);margin:0 auto;position:relative}
+#faceSvg{width:100%;height:100%;display:block;overflow:visible}
+.spin{transform-origin:200px 200px;animation:spin 38s linear infinite}
+.spin2{transform-origin:200px 200px;animation:spin 22s linear infinite reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* weapon panel */
+.wpanel{position:relative;align-self:center}
+.wbtn{
+  width:100%;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 3px 5px;
+  border:0;cursor:pointer;color:#cdeeff;border-radius:14px;
+  background:linear-gradient(#183a86,#0a1c50);
+  box-shadow:0 0 0 2px #315fc0,0 4px 0 #040c28,inset 0 2px 0 rgba(255,255,255,.28),inset 0 -8px 14px rgba(0,0,0,.35);
+  font:800 clamp(8px,2.6vw,12px)/1.1 var(--ui);letter-spacing:.04em;
+}
+.wbtn:active{transform:translateY(2px)}
+.wbtn .wtitle{display:flex;align-items:center;gap:3px;color:#8fe6ff;text-shadow:0 0 6px rgba(89,216,255,.7)}
+.wbtn .wtitle i{font-style:normal;font-size:.9em;transition:transform .2s}
+.wbtn[aria-expanded="true"] .wtitle i{transform:rotate(180deg)}
+.wshow{
+  width:100%;aspect-ratio:1;border-radius:10px;display:grid;place-items:center;
+  background:radial-gradient(circle at 50% 40%,#2a5fc9,#0a1a48);
+  box-shadow:inset 0 2px 8px rgba(0,0,0,.7);overflow:hidden;
+}
+.wshow svg{width:92%;height:92%;filter:drop-shadow(0 3px 2px rgba(0,0,0,.45))}
+.wshow .q{font:900 clamp(24px,8vw,44px)/1 "Arial Black",sans-serif;color:#5aa7ff;opacity:.8}
+.wname{min-height:2.2em;display:flex;align-items:center;text-align:center;color:#ffe27a;font-size:.92em}
+.wpanel.attn .wbtn{animation:attn .5s ease-in-out 3}
+@keyframes attn{0%,100%{transform:none}30%{transform:translateX(-4px) rotate(-2deg)}70%{transform:translateX(4px) rotate(2deg)}}
+.wpanel.hint .wbtn{box-shadow:0 0 0 2px #ffd23f,0 0 18px 4px rgba(255,210,63,.55),0 4px 0 #040c28}
+
+.wlist{
+  position:absolute;left:0;top:0;z-index:30;margin:0;padding:6px;list-style:none;
+  width:min(250px,calc(var(--wcol) + var(--face) * .7));
+  background:linear-gradient(#143278,#091a4b);border-radius:16px;
+  box-shadow:0 0 0 3px #4a82e6,0 12px 30px rgba(0,0,0,.65);
+  max-height:calc(100 * var(--vh) - 90px);overflow-y:auto;
+  transform-origin:top left;animation:dd .18s ease-out;
+}
+.wlist[hidden]{display:none}
+@keyframes dd{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
+.wlist li{
+  display:flex;align-items:center;gap:10px;padding:5px 8px;border-radius:12px;cursor:pointer;
+  font:800 15px/1.1 var(--ui);color:#d7f1ff;min-height:44px;
+}
+.wlist li:hover,.wlist li:focus-visible,.wlist li.sel{background:rgba(89,216,255,.22);outline:none}
+.wlist li.sel{color:#ffe27a}
+.wlist li svg{width:38px;height:38px;flex:none}
+
+/* K.O. meter */
+.kometer{
+  display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;border-radius:999px;
+  background:linear-gradient(90deg,#050f2c,#0b1f55,#050f2c);
+  box-shadow:inset 0 2px 8px #000,0 0 0 2px #2d5ab6;
+}
+.ko-l{
+  width:var(--ko-size);height:var(--ko-size);border-radius:50%;
+  display:grid;place-items:center;
+  font:900 calc(var(--ko-size) * .56)/1 "Arial Black",system-ui,sans-serif;color:#6aa4ff;
+  background:radial-gradient(circle at 35% 30%,#1b3a85,#07153d 70%);
+  box-shadow:inset 0 0 0 2px #3f74d9,inset 0 -3px 5px rgba(0,0,0,.5);
+  transition:color .2s,box-shadow .2s;
+}
+.ko-l.on{
+  color:#fff;text-shadow:0 1px 0 #7a0000;
+  background:radial-gradient(circle at 35% 30%,#ff9a8a,#ff2a2a 55%,#a40000 100%);
+  box-shadow:inset 0 0 0 2px #ffd0c8,0 0 14px 3px rgba(255,58,58,.8);
+  animation:lpop .45s cubic-bezier(.3,1.8,.5,1);
+}
+@keyframes lpop{0%{transform:scale(.4)}60%{transform:scale(1.35)}100%{transform:scale(1)}}
+.kometer.ko .ko-l.on{animation:lblink .5s steps(2) infinite}
+@keyframes lblink{50%{filter:brightness(1.7)}}
+
+/* ---------- arrows ---------- */
+.arrows{
+  position:relative;z-index:2;display:flex;justify-content:center;align-items:flex-end;
+  gap:clamp(6px,3vw,20px);height:calc(var(--arrow-h) + 12px);margin-top:6px;
+}
+.arrow{
+  width:clamp(72px,26vw,136px);height:var(--arrow-h);border:0;border-radius:20px;cursor:pointer;
+  display:grid;place-items:center;padding:0;
+  background:linear-gradient(#2a4c9a,#0f2562);
+  box-shadow:0 6px 0 #050f2e,0 0 0 3px #3f74d9,inset 0 2px 0 rgba(255,255,255,.3);
+  transition:transform .06s,box-shadow .06s,filter .15s;
+}
+.arrow.mid{margin-bottom:12px}
+.arrow:hover{filter:brightness(1.18)}
+.arrow:active,.arrow.press{transform:translateY(5px);box-shadow:0 1px 0 #050f2e,0 0 0 3px #3f74d9,inset 0 2px 0 rgba(255,255,255,.3)}
+.arrow svg{height:calc(var(--arrow-h) * .74);width:calc(var(--arrow-h) * .74);overflow:visible;filter:drop-shadow(0 3px 0 rgba(0,0,0,.45))}
+.arrow.l svg{transform:rotate(45deg)}
+.arrow.r svg{transform:rotate(-45deg)}
+.arrow:disabled{filter:grayscale(.8) brightness(.7);cursor:default}
+
+.counter{
+  position:relative;z-index:2;text-align:center;margin-top:8px;
+  font:700 clamp(11px,3.2vw,14px)/1 var(--ui);color:#8fb8ee;letter-spacing:.05em;
+}
+.counter b{color:#ffe27a;font-size:1.15em;display:inline-block}
+.counter b.bump{animation:cbump .25s ease-out}
+@keyframes cbump{0%{transform:scale(1.7);color:#fff}100%{transform:scale(1)}}
+
+/* ---------- overlay layers inside the gadget ---------- */
+#fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:6}
+#fxLayer{position:absolute;inset:0;pointer-events:none;z-index:8;overflow:hidden}
+#weapon{
+  position:absolute;left:0;top:0;pointer-events:none;z-index:7;opacity:0;will-change:transform,opacity;
+}
+#weapon svg{width:100%;height:100%;display:block;overflow:visible;filter:drop-shadow(0 8px 6px rgba(0,0,0,.45))}
+
+.burst{
+  position:absolute;width:clamp(96px,30vw,170px);aspect-ratio:7/5;pointer-events:none;
+  transform:translate(-50%,-50%);animation:burst .85s cubic-bezier(.2,1.5,.4,1) forwards;
+}
+.burst svg{width:100%;height:100%;overflow:visible}
+@keyframes burst{
+  0%{transform:translate(-50%,-50%) scale(.1) rotate(var(--rot));opacity:0}
+  18%{transform:translate(-50%,-50%) scale(1.3) rotate(calc(var(--rot) * -.5));opacity:1}
+  32%{transform:translate(-50%,-50%) scale(1) rotate(var(--rot))}
+  78%{opacity:1}
+  100%{transform:translate(-50%,-66%) scale(1.08) rotate(var(--rot));opacity:0}
+}
+.kotext{
+  position:absolute;left:50%;top:42%;z-index:9;pointer-events:none;opacity:0;
+  font:900 italic clamp(54px,22vw,130px)/1 "Arial Black",Impact,sans-serif;white-space:nowrap;
+  color:#ff3636;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;
+  text-shadow:0 7px 0 var(--ink),0 0 34px #ffd23f;
+  transform:translate(-50%,-50%) scale(0);
+}
+.kotext.go{animation:kopop 2.3s cubic-bezier(.2,1.4,.4,1) forwards}
+@keyframes kopop{
+  0%{transform:translate(-50%,-50%) scale(3.4) rotate(-14deg);opacity:0}
+  10%{transform:translate(-50%,-50%) scale(1) rotate(-7deg);opacity:1}
+  16%{transform:translate(-50%,-50%) scale(1.18) rotate(-5deg)}
+  24%{transform:translate(-50%,-50%) scale(1) rotate(-6deg)}
+  78%{opacity:1;transform:translate(-50%,-50%) scale(1.03) rotate(-6deg)}
+  100%{transform:translate(-50%,-64%) scale(1) rotate(-6deg);opacity:0}
+}
+.bubble{
+  position:absolute;z-index:10;pointer-events:none;max-width:calc(100% - var(--kcol) - 26px);padding:7px 11px;border-radius:14px;
+  background:#fff;color:var(--ink);font:800 clamp(11px,3.3vw,14px)/1.2 var(--ui);text-align:center;
+  box-shadow:0 0 0 3px var(--ink),0 6px 14px rgba(0,0,0,.4);
+  opacity:0;transform:scale(.6);transform-origin:20% 0%;
+  transition:opacity .15s,transform .25s cubic-bezier(.3,1.7,.5,1);
+}
+.bubble::after{
+  content:"";position:absolute;left:18px;top:-12px;border:8px solid transparent;border-bottom:12px solid var(--ink);
+}
+.bubble.show{opacity:1;transform:scale(1)}
+.toast{
+  position:absolute;left:50%;bottom:calc(var(--arrow-h) + 52px);z-index:11;pointer-events:none;
+  transform:translate(-50%,10px);padding:8px 16px;border-radius:999px;white-space:nowrap;
+  background:rgba(255,226,122,.97);color:var(--ink);font:900 clamp(12px,3.6vw,15px)/1 var(--ui);
+  box-shadow:0 0 0 3px var(--ink),0 6px 14px rgba(0,0,0,.45);opacity:0;transition:opacity .2s,transform .25s;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- name dialog ---------- */
+.dialog{
+  position:absolute;left:50%;top:50%;z-index:40;transform:translate(-50%,-50%);
+  width:min(86%,330px);padding:16px 16px 14px;border-radius:20px;text-align:center;
+  background:rgba(6,16,46,.78);
+  -webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);
+  box-shadow:0 0 0 3px rgba(89,216,255,.9),0 0 40px rgba(89,216,255,.4),0 14px 34px rgba(0,0,0,.6);
+  transition:opacity .35s,transform .35s;
+}
+.dialog.hide{opacity:0;transform:translate(-50%,-50%) scale(.85);pointer-events:none}
+.dialog label{display:block;font:900 clamp(15px,4.4vw,19px)/1.2 var(--ui);color:#ffe27a;margin-bottom:10px;text-shadow:0 2px 0 #000}
+.dialog input{
+  width:100%;height:44px;border-radius:12px;border:0;padding:0 14px;text-align:center;
+  font:800 18px/1 var(--ui);color:var(--ink);background:#f4fbff;
+  box-shadow:inset 0 3px 6px rgba(0,0,0,.3),0 0 0 3px #3d73d6;outline:none;
+  -webkit-user-select:text;user-select:text;
+}
+.dialog input:focus{box-shadow:inset 0 3px 6px rgba(0,0,0,.3),0 0 0 3px #ffd23f}
+.bigbtn{
+  margin-top:12px;width:100%;height:46px;border:0;border-radius:14px;cursor:pointer;
+  font:900 18px/1 "Arial Black",system-ui,sans-serif;color:#fff;letter-spacing:.06em;
+  background:linear-gradient(#ff7a6a,#e32222 55%,#a30e0e);text-shadow:0 2px 0 #6a0000;
+  box-shadow:0 5px 0 #5a0808,0 0 0 3px var(--ink),inset 0 2px 0 rgba(255,255,255,.5);
+}
+.bigbtn:active{transform:translateY(4px);box-shadow:0 1px 0 #5a0808,0 0 0 3px var(--ink)}
+
+/* ---------- face SVG bits ---------- */
+.mark{
+  opacity:0;transform:scale(.15);transform-box:fill-box;transform-origin:center;
+  transition:transform .5s cubic-bezier(.3,1.9,.5,1),opacity .15s;
+}
+.mark.on{opacity:1;transform:scale(1)}
+.plin{
+  opacity:0;transform:scale(.2) rotate(-25deg);transform-box:fill-box;transform-origin:center;
+  transition:transform .35s cubic-bezier(.3,1.9,.5,1),opacity .12s;
+}
+.plin.on{opacity:1;transform:none}
+#tearsG,#sweatG{opacity:0;transition:opacity .3s}
+#tearsG.on,#sweatG.on{opacity:1}
+.tear{animation:tear 1.5s ease-in infinite;transform-box:fill-box}
+.tear.t2{animation-delay:.5s}.tear.t3{animation-delay:1s}
+@keyframes tear{0%{transform:translateY(-4px) scale(.4);opacity:0}15%{opacity:1;transform:translateY(0) scale(1)}100%{transform:translateY(70px) scale(.8);opacity:0}}
+.sweat{animation:sweat 1.8s ease-in infinite}
+@keyframes sweat{0%{transform:translateY(-6px) scale(.3);opacity:0}20%{opacity:1;transform:translateY(0) scale(1)}100%{transform:translateY(34px) scale(.9);opacity:0}}
+.kometer,.wpanel,.heal,.arrow{-webkit-touch-callout:none}
+
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:100}
+
+/* short landscape screens (phones turned sideways) */
+@media (max-height:470px) and (orientation:landscape){
+  :root{--wcol:92px;--arrow-h:clamp(44px,calc(13 * var(--vh)),64px);
+    --face:max(120px,min(calc(100vw - 40px - var(--wcol) - var(--kcol)),calc(100 * var(--vh) - 176px),470px))}
+  .title{display:none}
+  #app{gap:0;padding-top:2px;padding-bottom:2px}
+  .util{position:fixed;top:4px;left:6px;right:6px;width:auto;z-index:60;pointer-events:none}
+  .util .chip{pointer-events:auto;height:26px;opacity:.85}
+  .toprow{margin:0 0 2px}.victim{padding:4px 12px}
+  .wshow{max-width:64px;margin:0 auto}.wname{min-height:1.6em}
+  .counter{margin-top:3px}
+  .arrows{margin-top:0}
+}
+@media (prefers-reduced-motion:reduce){
+  body::before,.spin,.spin2{animation:none}
+}
+noscript{position:fixed;inset:0;display:grid;place-items:center;background:#030818;color:#fff;font:700 18px sans-serif;z-index:999}
+html,body{-webkit-touch-callout:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+@supports (padding:max(0px)){body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}}
+@media (pointer:coarse){.chip{min-height:42px}#soundBtn{min-width:44px}}
+</style>
+</head>
+<body>
+<noscript>Bu oyun JavaScript tələb edir.</noscript>
+<div id="app">
+  <div class="util">
+    <a class="chip" href="index.html" id="menuLink">
+      <svg viewBox="0 0 24 24"><path d="M15.4 5.4 8.8 12l6.6 6.6 1.8-1.8L12.4 12l4.8-4.8z"/></svg>Menyuya qayıt
+    </a>
+    <button class="chip" id="soundBtn" aria-label="Səsi aç/bağla" title="Səs">
+      <svg class="on" viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>
+      <svg class="off" viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9H3zm13.6 3 2.4-2.4-1.4-1.4-2.4 2.4-2.4-2.4-1.4 1.4 2.4 2.4-2.4 2.4 1.4 1.4 2.4-2.4 2.4 2.4 1.4-1.4z"/></svg>
+    </button>
+  </div>
+
+  <div id="shaker">
+    <main class="gadget" id="gadget">
+      <i class="screw a"></i><i class="screw b"></i><i class="screw c"></i><i class="screw d"></i>
+      <h1 class="title">PRAKTİKANI DÖY</h1>
+
+      <div class="toprow">
+        <div class="victim">Qurban: <b id="victimName">praktikant</b></div>
+        <button class="heal" id="healBtn" aria-label="Müalicə et">
+          <!-- first-aid kit -->
+          <svg viewBox="0 0 48 48" aria-hidden="true">
+            <path d="M17 12v-3a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3" fill="none" stroke="#2a1740" stroke-width="3.5" stroke-linecap="round"/>
+            <rect x="4" y="12" width="40" height="30" rx="7" fill="#fff" stroke="#2a1740" stroke-width="3.5"/>
+            <rect x="6" y="14" width="36" height="9" rx="5" fill="#dff0ff" opacity=".9"/>
+            <path d="M20 20h8v6h6v8h-6v6h-8v-6h-6v-8h6z" fill="#e8222c" stroke="#2a1740" stroke-width="2.5" stroke-linejoin="round"/>
+          </svg>
+          <span>MÜALİCƏ<br>ET</span>
+        </button>
+      </div>
+
+      <section class="stage" id="stage">
+        <!-- weapon panel -->
+        <div class="wpanel" id="wpanel">
+          <button class="wbtn" id="wbtn" aria-haspopup="listbox" aria-expanded="false">
+            <span class="wtitle">SİLAHLAR <i>▾</i></span>
+            <span class="wshow" id="wshow"><span class="q">?</span></span>
+            <span class="wname" id="wname">Seç</span>
+          </button>
+          <ul class="wlist" id="wlist" role="listbox" hidden></ul>
+        </div>
+
+        <!-- face inside the crosshair frame -->
+        <div class="facebox" id="facebox">
+          <svg id="faceSvg" viewBox="-24 -24 448 448" role="img" aria-label="Praktikant">
+            <defs>
+              <radialGradient id="gBg" cx="50%" cy="36%" r="78%"><stop offset="0" stop-color="#e2f6ff"/><stop offset=".55" stop-color="#7cc6f0"/><stop offset="1" stop-color="#2c74c2"/></radialGradient>
+              <radialGradient id="gSkin" cx="42%" cy="30%" r="82%"><stop offset="0" stop-color="#ffe3c0"/><stop offset=".68" stop-color="#ffc48d"/><stop offset="1" stop-color="#ee9f68"/></radialGradient>
+              <linearGradient id="gShirt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c4dcf4"/></linearGradient>
+              <linearGradient id="gTie" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff9a2e"/><stop offset=".5" stop-color="#ffb84d"/><stop offset="1" stop-color="#e5731a"/></linearGradient>
+              <linearGradient id="gRing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9fc2ff"/><stop offset=".5" stop-color="#2f56b3"/><stop offset="1" stop-color="#a6c7ff"/></linearGradient>
+              <radialGradient id="gBruise" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#4c1d78" stop-opacity=".95"/><stop offset=".62" stop-color="#6e3399" stop-opacity=".85"/><stop offset="1" stop-color="#8e5cc0" stop-opacity="0"/></radialGradient>
+              <radialGradient id="gNose" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#ff9d9d"/><stop offset=".55" stop-color="#ff3d3d"/><stop offset="1" stop-color="#c41212"/></radialGradient>
+              <radialGradient id="gBump" cx="40%" cy="32%" r="75%"><stop offset="0" stop-color="#ffd7b0"/><stop offset=".6" stop-color="#ff9c70"/><stop offset="1" stop-color="#e46a54"/></radialGradient>
+              <clipPath id="cpCircle"><circle cx="200" cy="200" r="184"/></clipPath>
+              <clipPath id="cpMouth"><path id="mouthClip" d="M0 0"/></clipPath>
+              <pattern id="pDots" width="16" height="16" patternUnits="userSpaceOnUse"><circle cx="8" cy="8" r="2.2" fill="#fff" opacity=".28"/></pattern>
+            </defs>
+
+            <!-- ===== everything inside the round frame ===== -->
+            <g clip-path="url(#cpCircle)">
+              <rect x="0" y="0" width="400" height="400" fill="url(#gBg)"/>
+              <rect x="0" y="0" width="400" height="400" fill="url(#pDots)"/>
+              <!-- office window blinds + shelf (original background doodles) -->
+              <g opacity=".5" stroke="#fff" stroke-width="5" stroke-linecap="round">
+                <path d="M40 80h60M40 96h60M40 112h60M40 128h60"/>
+                <path d="M300 60h60M300 76h60M300 92h60"/>
+              </g>
+              <path d="M0 330 Q200 300 400 330 V400 H0Z" fill="#2f6fb9" opacity=".55"/>
+
+              <!-- body -->
+              <g id="bodyG">
+                <path d="M166 262v78q34 16 68 0v-78z" fill="#e8935a" stroke="#2a1740" stroke-width="6" stroke-linejoin="round"/>
+                <path d="M166 282q34 34 68 0v-20h-68z" fill="#bf6c3f" opacity=".6"/>
+                <!-- shirt -->
+                <path d="M0 430C6 372 80 330 168 322L200 344 232 322C320 330 394 372 400 430z" fill="url(#gShirt)" stroke="#2a1740" stroke-width="6" stroke-linejoin="round"/>
+                <!-- collar -->
+                <path d="M168 322 148 314 160 372 200 344z" fill="#fff" stroke="#2a1740" stroke-width="5" stroke-linejoin="round"/>
+                <path d="M232 322 252 314 240 372 200 344z" fill="#fff" stroke="#2a1740" stroke-width="5" stroke-linejoin="round"/>
+                <!-- tie -->
+                <path d="M200 346 220 372 212 436 200 450 188 436 180 372z" fill="url(#gTie)" stroke="#2a1740" stroke-width="5" stroke-linejoin="round"/>
+                <path d="M184 346h32l4 22-20 8-20-8z" fill="#ff9a2e" stroke="#2a1740" stroke-width="5" stroke-linejoin="round"/>
+                <path d="M186 390l26-10M186 408l28-10M188 426l22-8" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".75"/>
+                <!-- lanyard + name badge -->
+                <path d="M152 316 L176 392" stroke="#35358f" stroke-width="7" stroke-linecap="round"/>
+                <g transform="translate(262 392) rotate(8)">
+                  <rect x="-34" y="-20" width="68" height="44" rx="7" fill="#fff" stroke="#2a1740" stroke-width="4.5"/>
+                  <rect x="-34" y="-20" width="68" height="13" rx="6" fill="#35c4b8" stroke="#2a1740" stroke-width="4.5"/>
+                  <text x="0" y="17" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="11" font-weight="900" fill="#2a1740">STAJYOR</text>
+                </g>
+                <path d="M248 318 L262 372" stroke="#35358f" stroke-width="7" stroke-linecap="round"/>
+              </g>
+
+              <!-- ===== head (springs move this group) ===== -->
+              <g id="headG">
+                <!-- cheek puffs sit behind the head so they bulge outward -->
+                <g id="puffG">
+                  <circle id="puffL" cx="122" cy="230" r="30" fill="url(#gSkin)" stroke="#2a1740" stroke-width="6" opacity="0"/>
+                  <circle id="puffR" cx="278" cy="230" r="30" fill="url(#gSkin)" stroke="#2a1740" stroke-width="6" opacity="0"/>
+                </g>
+                <!-- ears -->
+                <circle cx="97" cy="194" r="22" fill="url(#gSkin)" stroke="#2a1740" stroke-width="6"/>
+                <circle cx="303" cy="194" r="22" fill="url(#gSkin)" stroke="#2a1740" stroke-width="6"/>
+                <path d="M92 186q-8 10 2 20M308 186q8 10-2 20" fill="none" stroke="#d98456" stroke-width="4" stroke-linecap="round"/>
+                <!-- head -->
+                <ellipse cx="200" cy="188" rx="102" ry="110" fill="url(#gSkin)" stroke="#2a1740" stroke-width="6.5"/>
+                <path d="M140 262q60 52 120 0" fill="none" stroke="#e29a63" stroke-width="5" stroke-linecap="round" opacity=".55"/>
+
+                <!-- bruises (black eyes) sit under the eyes -->
+                <ellipse id="bruiseL" class="mark" cx="158" cy="184" rx="40" ry="38" fill="url(#gBruise)"/>
+                <ellipse id="bruiseR" class="mark" cx="242" cy="184" rx="40" ry="38" fill="url(#gBruise)"/>
+
+                <!-- cheeks + freckles -->
+                <g id="cheekL"><circle cx="128" cy="226" r="17" fill="#ff7f86" opacity=".5"/></g>
+                <g id="cheekR"><circle cx="272" cy="226" r="17" fill="#ff7f86" opacity=".5"/></g>
+                <g fill="#c2703f" opacity=".7">
+                  <circle cx="138" cy="206" r="2.6"/><circle cx="150" cy="212" r="2.6"/><circle cx="130" cy="214" r="2.6"/>
+                  <circle cx="262" cy="206" r="2.6"/><circle cx="250" cy="212" r="2.6"/><circle cx="270" cy="214" r="2.6"/>
+                </g>
+
+                <!-- hair -->
+                <g id="hairG">
+                  <path d="M96 176C78 100 124 52 200 50 276 52 322 100 304 176 298 148 288 130 268 122Q248 140 228 120 208 142 188 120 168 140 148 122 118 132 104 164z" fill="#5a3520" stroke="#2a1740" stroke-width="6.5" stroke-linejoin="round"/>
+                  <path d="M186 62C172 24 206 10 216 38 228 16 258 28 240 64z" fill="#5a3520" stroke="#2a1740" stroke-width="6" stroke-linejoin="round"/>
+                  <path d="M130 90Q150 66 178 62M246 70Q272 80 284 104" fill="none" stroke="#8a5a38" stroke-width="7" stroke-linecap="round" opacity=".8"/>
+                </g>
+
+                <!-- eyes -->
+                <g id="eyeLG">
+                  <g class="eo" id="eyeLopen">
+                    <ellipse cx="158" cy="182" rx="26" ry="29" fill="#fff" stroke="#2a1740" stroke-width="5.5"/>
+                    <g id="pupL"><circle cx="158" cy="184" r="12" fill="#2a1740"/><circle cx="153" cy="178" r="4.5" fill="#fff"/></g>
+                  </g>
+                  <g id="eyeLspiral" style="display:none"><circle cx="158" cy="182" r="26" fill="#fff" stroke="#2a1740" stroke-width="5.5"/><path id="spL" d="" fill="none" stroke="#2a1740" stroke-width="4.5" stroke-linecap="round"/></g>
+                  <path id="eyeLsq" d="M138 162 174 182 138 202" fill="none" stroke="#2a1740" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+                </g>
+                <g id="eyeRG">
+                  <g class="eo" id="eyeRopen">
+                    <ellipse cx="242" cy="182" rx="26" ry="29" fill="#fff" stroke="#2a1740" stroke-width="5.5"/>
+                    <g id="pupR"><circle cx="242" cy="184" r="12" fill="#2a1740"/><circle cx="237" cy="178" r="4.5" fill="#fff"/></g>
+                  </g>
+                  <g id="eyeRspiral" style="display:none"><circle cx="242" cy="182" r="26" fill="#fff" stroke="#2a1740" stroke-width="5.5"/><path id="spR" d="" fill="none" stroke="#2a1740" stroke-width="4.5" stroke-linecap="round"/></g>
+                  <path id="eyeRsq" d="M262 162 226 182 262 202" fill="none" stroke="#2a1740" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+                </g>
+
+                <!-- nose (normal + swollen red one) -->
+                <g id="noseG">
+                  <ellipse cx="200" cy="214" rx="13" ry="10" fill="#f09a63" stroke="#2a1740" stroke-width="5"/>
+                  <ellipse cx="196" cy="210" rx="4" ry="2.6" fill="#fff" opacity=".6"/>
+                  <g id="noseRed" class="mark"><circle cx="200" cy="214" r="21" fill="url(#gNose)" stroke="#2a1740" stroke-width="5.5"/><ellipse cx="193" cy="206" rx="6.5" ry="4" fill="#fff" opacity=".7"/></g>
+                </g>
+
+                <!-- mouth -->
+                <g id="mouthG">
+                  <g clip-path="url(#cpMouth)">
+                    <rect x="100" y="200" width="200" height="130" fill="#6b1a3a"/>
+                    <ellipse id="tongue" cx="200" cy="280" rx="22" ry="13" fill="#ff7a8c" stroke="#c4455a" stroke-width="3"/>
+                    <g id="teethRow">
+                      <rect class="tooth" x="-28" y="-3" width="11.5" height="17" rx="3" fill="#fff" stroke="#2a1740" stroke-width="2.6"/>
+                      <rect class="tooth" x="-16.5" y="-3" width="11.5" height="17" rx="3" fill="#fff" stroke="#2a1740" stroke-width="2.6"/>
+                      <rect class="tooth gap" x="-5" y="-3" width="11.5" height="17" rx="3" fill="#fff" stroke="#2a1740" stroke-width="2.6"/>
+                      <rect class="tooth" x="6.5" y="-3" width="11.5" height="17" rx="3" fill="#fff" stroke="#2a1740" stroke-width="2.6"/>
+                      <rect class="tooth" x="18" y="-3" width="11.5" height="17" rx="3" fill="#fff" stroke="#2a1740" stroke-width="2.6"/>
+                    </g>
+                  </g>
+                  <path id="mouthPath" d="M0 0" fill="none" stroke="#2a1740" stroke-width="6.5" stroke-linejoin="round" stroke-linecap="round"/>
+                </g>
+
+                <!-- brows -->
+                <path id="browL" d="M126 140Q158 120 188 136" fill="none" stroke="#3a2012" stroke-width="10" stroke-linecap="round"/>
+                <path id="browR" d="M212 136Q242 120 274 140" fill="none" stroke="#3a2012" stroke-width="10" stroke-linecap="round"/>
+
+                <!-- bumps / lumps -->
+                <g id="bump1" class="mark"><circle cx="206" cy="122" r="16" fill="url(#gBump)" stroke="#2a1740" stroke-width="5"/><ellipse cx="200" cy="116" rx="5" ry="3" fill="#fff" opacity=".7"/><path d="M226 104l8-8M232 118h10M222 92l2-8" stroke="#2a1740" stroke-width="3.5" stroke-linecap="round"/></g>
+                <g id="bump2" class="mark"><circle cx="266" cy="132" r="12" fill="url(#gBump)" stroke="#2a1740" stroke-width="5"/><ellipse cx="262" cy="128" rx="4" ry="2.5" fill="#fff" opacity=".7"/></g>
+                <g id="bump3" class="mark"><circle cx="136" cy="128" r="12" fill="url(#gBump)" stroke="#2a1740" stroke-width="5"/><ellipse cx="132" cy="124" rx="4" ry="2.5" fill="#fff" opacity=".7"/></g>
+
+                <!-- tears + sweat -->
+                <g id="tearsG">
+                  <g transform="translate(138 222)"><path class="tear" d="M0-9C7 0 7 9 0 9S-7 0 0-9z" fill="#78d4ff" stroke="#2a1740" stroke-width="2.5"/></g>
+                  <g transform="translate(126 214)"><path class="tear t2" d="M0-9C7 0 7 9 0 9S-7 0 0-9z" fill="#78d4ff" stroke="#2a1740" stroke-width="2.5"/></g>
+                  <g transform="translate(262 222)"><path class="tear t3" d="M0-9C7 0 7 9 0 9S-7 0 0-9z" fill="#78d4ff" stroke="#2a1740" stroke-width="2.5"/></g>
+                  <g transform="translate(274 214)"><path class="tear t2" d="M0-9C7 0 7 9 0 9S-7 0 0-9z" fill="#78d4ff" stroke="#2a1740" stroke-width="2.5"/></g>
+                </g>
+                <g id="sweatG">
+                  <g transform="translate(296 134)"><path class="sweat" d="M0-11C8 0 8 10 0 10S-8 0 0-11z" fill="#9be3ff" stroke="#2a1740" stroke-width="3"/></g>
+                </g>
+
+                <!-- plasters (appear while healing) -->
+                <g transform="translate(206 124) rotate(28)"><g class="plin" id="pl1"><rect x="-32" y="-12" width="64" height="24" rx="12" fill="#f7cba0" stroke="#2a1740" stroke-width="4.5"/><rect x="-13" y="-12" width="26" height="24" fill="#fff3df" stroke="#2a1740" stroke-width="0"/><path d="M-13 -12v24M13 -12v24" stroke="#2a1740" stroke-width="2.5"/><circle cx="-23" cy="0" r="1.8" fill="#c8864f"/><circle cx="23" cy="0" r="1.8" fill="#c8864f"/></g></g>
+                <g transform="translate(200 216) rotate(-32)"><g class="plin" id="pl2"><rect x="-34" y="-12" width="68" height="24" rx="12" fill="#f7cba0" stroke="#2a1740" stroke-width="4.5"/><rect x="-14" y="-12" width="28" height="24" fill="#fff3df"/><path d="M-14 -12v24M14 -12v24" stroke="#2a1740" stroke-width="2.5"/></g></g>
+                <g transform="translate(200 216) rotate(32)"><g class="plin" id="pl2b"><rect x="-34" y="-12" width="68" height="24" rx="12" fill="#f7cba0" stroke="#2a1740" stroke-width="4.5"/><rect x="-14" y="-12" width="28" height="24" fill="#fff3df"/><path d="M-14 -12v24M14 -12v24" stroke="#2a1740" stroke-width="2.5"/></g></g>
+                <g transform="translate(148 196) rotate(-18)"><g class="plin" id="pl3"><rect x="-32" y="-12" width="64" height="24" rx="12" fill="#f7cba0" stroke="#2a1740" stroke-width="4.5"/><rect x="-13" y="-12" width="26" height="24" fill="#fff3df"/><path d="M-13 -12v24M13 -12v24" stroke="#2a1740" stroke-width="2.5"/></g></g>
+              </g>
+
+              <!-- birds orbiting the head -->
+              <g id="birdsG"></g>
+            </g>
+
+            <!-- ===== crosshair frame (retro-futuristic) ===== -->
+            <g id="frame" pointer-events="none">
+              <circle cx="200" cy="200" r="190" fill="none" stroke="#050d26" stroke-width="18"/>
+              <circle cx="200" cy="200" r="190" fill="none" stroke="url(#gRing)" stroke-width="12"/>
+              <circle cx="200" cy="200" r="183" fill="none" stroke="#9de6ff" stroke-width="2.4" opacity=".85"/>
+              <g class="spin"><circle cx="200" cy="200" r="206" fill="none" stroke="#59d8ff" stroke-width="2.4" stroke-dasharray="2 10" stroke-linecap="round"/></g>
+              <g class="spin2"><circle cx="200" cy="200" r="216" fill="none" stroke="#59d8ff" stroke-width="1.6" stroke-dasharray="26 18 4 18" opacity=".7"/></g>
+              <path d="M200 -14V28M200 372V414M-14 200H28M372 200H414" stroke="#ff3d3d" stroke-width="7" stroke-linecap="round"/>
+              <path d="M200 40V70M200 330V360M40 200H70M330 200H360" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".35"/>
+              <circle cx="200" cy="200" r="4" fill="#ff3d3d" opacity=".0"/>
+            </g>
+          </svg>
+        </div>
+
+        <!-- K.O.-METR -->
+        <aside class="kometer" id="kometer" aria-label="K.O.-metr"></aside>
+      </section>
+
+      <nav class="arrows" id="arrows" aria-label="Zərbə istiqaməti">
+        <button class="arrow l" data-dir="-1" aria-label="Soldan zərbə"><svg viewBox="0 0 100 100"><use href="#arrowShape"/></svg></button>
+        <button class="arrow mid" data-dir="0" aria-label="Aşağıdan yuxarı zərbə"><svg viewBox="0 0 100 100"><use href="#arrowShape"/></svg></button>
+        <button class="arrow r" data-dir="1" aria-label="Sağdan zərbə"><svg viewBox="0 0 100 100"><use href="#arrowShape"/></svg></button>
+      </nav>
+      <div class="counter">Cəmi zərbə: <b id="hits">0</b></div>
+
+      <!-- overlay layers -->
+      <canvas id="fx"></canvas>
+      <div id="weapon"></div>
+      <div id="fxLayer"></div>
+      <div class="kotext" id="koText">K.O.!</div>
+      <div class="bubble" id="bubble"></div>
+      <div class="toast" id="toast"></div>
+
+      <div class="dialog" id="nameDialog" role="dialog" aria-labelledby="dlgLabel">
+        <label id="dlgLabel" for="nameInput">Qurbanınıza ad verin:</label>
+        <input id="nameInput" type="text" maxlength="18" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="praktikant">
+        <button class="bigbtn" id="nameOk">TƏSDİQ ET</button>
+      </div>
+    </main>
+  </div>
+</div>
+<div id="flash"></div>
+
+<!-- shared red arrow (pointing up); the buttons rotate it -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="gArrow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8f7d"/><stop offset=".5" stop-color="#ee2a2a"/><stop offset="1" stop-color="#a30c0c"/></linearGradient>
+    <symbol id="arrowShape" viewBox="0 0 100 100">
+      <path d="M50 5 94 52H67V94H33V52H6z" fill="url(#gArrow)" stroke="#2a1740" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M50 14 80 48H62V30z" fill="#fff" opacity=".28"/>
+      <path d="M40 54V88" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".3"/>
+    </symbol>
+  </defs>
+</svg>
+
+<script>
+/* =====================================================================
+   PRAKTİKANI DÖY — all graphics are SVG/Canvas, all sounds are synthesized
+   ===================================================================== */
+(function () {
+'use strict';
+
+/* ---------------------------------------------------------------------
+   Small helpers
+   --------------------------------------------------------------------- */
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const rand = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[(Math.random() * arr.length) | 0];
+const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+const easeInBack = t => { const c1 = 1.1, c3 = c1 + 1; return c3 * t * t * t - c1 * t * t; };
+const REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------------------------------------------------------------------
+   Storage helper (prefix per game, never throws)
+   --------------------------------------------------------------------- */
+const Store = {
+  prefix: 'gemi_oyun2_',
+  get(key, def) {
+    try { const raw = localStorage.getItem(this.prefix + key); return raw === null ? def : JSON.parse(raw); }
+    catch (e) { return def; }
+  },
+  set(key, val) {
+    try { localStorage.setItem(this.prefix + key, JSON.stringify(val)); } catch (e) { /* storage blocked */ }
+  }
+};
+
+/* ---------------------------------------------------------------------
+   Audio helper: everything is synthesized with Web Audio.
+   The context is created lazily and resumed on the first user gesture.
+   --------------------------------------------------------------------- */
+const Sound = (function () {
+  let ctx = null, master = null, noiseBuf = null;
+  let muted = !!Store.get('muted', false);
+
+  function ensure() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { ctx = new AC(); } catch (e) { return null; }
+      master = ctx.createGain();
+      master.gain.value = muted ? 0 : 0.9;
+      master.connect(ctx.destination);
+      // 1.5 s of white noise, reused by every noise() call
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 1.5, ctx.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    if (ctx.state !== 'running') ctx.resume().catch(function () {});
+    return ctx;
+  }
+
+  // Browsers block audio until a gesture: keep trying until the context runs.
+  function unlock() {
+    ensure();
+    if (ctx && ctx.state === 'running') {
+      ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'click', 'keydown', 'mousedown'].forEach(function (ev) { window.removeEventListener(ev, unlock, true); });
+    }
+  }
+  ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'click', 'keydown', 'mousedown'].forEach(function (ev) { window.addEventListener(ev, unlock, true); });
+  document.addEventListener('visibilitychange', function () { if (!ctx) return; if (document.hidden) { ctx.suspend().catch(function () {}); } else if (ctx.state !== 'running') { ctx.resume().catch(function () {}); } });
+
+  // opts: f, to, dur, type, vol, at (delay), atk, filter:{type,f,q}
+  function tone(o) {
+    if (muted) return;
+    const c = ensure(); if (!c) return;
+    const t0 = c.currentTime + (o.at || 0), dur = o.dur || 0.2, vol = o.vol == null ? 0.3 : o.vol;
+    const osc = c.createOscillator(), g = c.createGain();
+    osc.type = o.type || 'sine';
+    osc.frequency.setValueAtTime(o.f, t0);
+    if (o.to) osc.frequency.exponentialRampToValueAtTime(Math.max(1, o.to), t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), t0 + (o.atk || 0.004));
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    let last = osc;
+    if (o.filter) {
+      const fl = c.createBiquadFilter();
+      fl.type = o.filter.type; fl.frequency.value = o.filter.f; fl.Q.value = o.filter.q || 1;
+      osc.connect(fl); last = fl;
+    }
+    last.connect(g); g.connect(master);
+    osc.start(t0); osc.stop(t0 + dur + 0.05);
+  }
+
+  // opts: dur, vol, at, type (filter type), f, to, q
+  function noise(o) {
+    if (muted) return;
+    const c = ensure(); if (!c) return;
+    const t0 = c.currentTime + (o.at || 0), dur = o.dur || 0.15, vol = o.vol == null ? 0.3 : o.vol;
+    const src = c.createBufferSource(); src.buffer = noiseBuf;
+    const fl = c.createBiquadFilter(); fl.type = o.type || 'lowpass';
+    fl.frequency.setValueAtTime(o.f || 1000, t0);
+    if (o.to) fl.frequency.exponentialRampToValueAtTime(Math.max(20, o.to), t0 + dur);
+    fl.Q.value = o.q || 1;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), t0 + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(fl); fl.connect(g); g.connect(master);
+    src.start(t0, Math.random()); src.stop(t0 + dur + 0.05);
+  }
+
+  function setMuted(m) {
+    muted = m; Store.set('muted', m);
+    if (ctx && master) master.gain.setTargetAtTime(m ? 0 : 0.9, ctx.currentTime, 0.02);
+  }
+  return { ensure: ensure, tone: tone, noise: noise, setMuted: setMuted, isMuted: function () { return muted; } };
+})();
+
+/* Reusable sound building blocks */
+function thud(f0, f1, vol, dur) { Sound.tone({ f: f0, to: f1, dur: dur || 0.2, vol: vol, type: 'sine', atk: 0.002 }); }
+function buzz(p) { try { if (navigator.vibrate && !Sound.isMuted()) navigator.vibrate(p); } catch (e) {} }
+const SFX = {
+  tick(p) { Sound.tone({ f: 600 * (p || 1), to: 900 * (p || 1), dur: 0.05, vol: 0.12, type: 'square' }); },
+  open() { Sound.tone({ f: 420, to: 640, dur: 0.07, vol: 0.12, type: 'triangle' }); },
+  pick() { Sound.tone({ f: 520, dur: 0.07, vol: 0.14, type: 'triangle' }); Sound.tone({ f: 780, dur: 0.09, vol: 0.14, type: 'triangle', at: 0.06 }); },
+  whoosh() { Sound.noise({ dur: 0.22, vol: 0.2, type: 'bandpass', f: 250, to: 2600, q: 0.7 }); },
+  pop() { Sound.tone({ f: 260, to: 760, dur: 0.12, vol: 0.22, type: 'sine' }); },
+  star() { Sound.tone({ f: 1500 + Math.random() * 900, to: 2600, dur: 0.1, vol: 0.05, type: 'sine' }); },
+  nope() { Sound.tone({ f: 220, to: 160, dur: 0.16, vol: 0.14, type: 'square' }); },
+  tooth() { Sound.tone({ f: 2200, to: 1500, dur: 0.18, vol: 0.12, type: 'triangle' }); },
+  // ---- weapon impacts ----
+  fist() { thud(160, 48, 0.55, 0.2); Sound.noise({ dur: 0.07, vol: 0.35, type: 'lowpass', f: 2200, to: 500 }); },
+  glove() { thud(105, 32, 0.75, 0.3); Sound.noise({ dur: 0.15, vol: 0.28, type: 'lowpass', f: 700, to: 200 }); },
+  slipper() { Sound.noise({ dur: 0.1, vol: 0.55, type: 'bandpass', f: 2300, to: 900, q: 1.2 }); thud(240, 90, 0.25, 0.1); },
+  bat() {
+    Sound.noise({ dur: 0.04, vol: 0.5, type: 'highpass', f: 2500 });
+    Sound.tone({ f: 900, to: 260, dur: 0.14, vol: 0.4, type: 'triangle' });
+    thud(120, 50, 0.45, 0.22);
+    Sound.tone({ f: 1250, dur: 0.45, vol: 0.07, at: 0.02 });
+  },
+  chicken() {
+    thud(200, 70, 0.3, 0.1);
+    Sound.tone({ f: 520, to: 1500, dur: 0.11, vol: 0.2, type: 'sawtooth', filter: { type: 'bandpass', f: 1300, q: 3 } });
+    Sound.tone({ f: 1500, to: 780, dur: 0.17, vol: 0.2, type: 'sawtooth', at: 0.1, filter: { type: 'bandpass', f: 1100, q: 3 } });
+  },
+  pan() {
+    const f0 = 196;
+    [[1, 0.4, 0.95], [2.76, 0.24, 0.6], [5.4, 0.14, 0.32], [8.93, 0.08, 0.2]].forEach(function (p) {
+      Sound.tone({ f: f0 * p[0], dur: p[2] + 0.2, vol: p[1], type: 'sine', atk: 0.002 });
+    });
+    Sound.noise({ dur: 0.05, vol: 0.5, type: 'highpass', f: 3000 });
+    thud(150, 60, 0.35, 0.12);
+  },
+  paper() { Sound.noise({ dur: 0.13, vol: 0.55, type: 'bandpass', f: 1500, to: 3200, q: 0.6 }); thud(300, 120, 0.2, 0.07); },
+  // ---- events ----
+  ko() {
+    // boxing bell ding-ding, then a sad trombone
+    [0, 0.28].forEach(function (d) {
+      Sound.tone({ f: 1480, dur: 0.7, vol: 0.2, type: 'triangle', at: d });
+      Sound.tone({ f: 2960, dur: 0.4, vol: 0.08, type: 'sine', at: d });
+    });
+    Sound.noise({ dur: 0.6, vol: 0.2, type: 'highpass', f: 5000 });
+    [[311, 0.34, 0.55], [294, 0.34, 0.9], [277, 0.34, 1.25], [262, 0.95, 1.6]].forEach(function (n, i) {
+      Sound.tone({ f: n[0], to: i === 3 ? 215 : n[0] * 0.985, dur: n[1], vol: 0.2, type: 'sawtooth', at: n[2] - 0.4, atk: 0.04, filter: { type: 'lowpass', f: 1000, q: 2 } });
+    });
+  },
+  rip() { Sound.noise({ dur: 0.28, vol: 0.4, type: 'highpass', f: 900, to: 5000, q: 0.8 }); },
+  heal() { [523, 659, 784, 1047].forEach(function (f, i) { Sound.tone({ f: f, dur: 0.28, vol: 0.18, type: 'triangle', at: i * 0.09 }); }); },
+  boing() { Sound.tone({ f: 200, to: 520, dur: 0.18, vol: 0.2, type: 'sine' }); }
+};
+
+/* ---------------------------------------------------------------------
+   Particle system (canvas, cartoon-only: stars, swirls, drops, puffs...)
+   --------------------------------------------------------------------- */
+const FX = (function () {
+  const cv = $('fx'), g = cv.getContext('2d');
+  const list = [];
+  let W = 0, H = 0, dpr = 1;
+
+  function resize() {
+    const gad = $('gadget');
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = gad.clientWidth; H = gad.clientHeight;
+    cv.width = Math.max(1, Math.round(W * dpr));
+    cv.height = Math.max(1, Math.round(H * dpr));
+  }
+
+  // kinds: star, swirl, drop, puff, confetti, feather, paper, heart, plus, spark, tooth, ting
+  function spawn(p) {
+    if (list.length > 320) list.shift();
+    list.push(Object.assign({ x: 0, y: 0, vx: 0, vy: 0, ax: 0, ay: 0, drag: 0, rot: 0, vr: 0, size: 10, color: '#ffd23f', age: 0, life: 1, kind: 'star', orbit: null }, p));
+  }
+
+  function update(dt) {
+    for (let i = list.length - 1; i >= 0; i--) {
+      const p = list[i];
+      p.age += dt;
+      if (p.age >= p.life) { list[i] = list[list.length - 1]; list.pop(); continue; }
+      if (p.orbit) {
+        const o = p.orbit, a = o.phase + p.age * o.speed;
+        p.x = o.cx + Math.cos(a) * o.rx; p.y = o.cy + Math.sin(a) * o.ry;
+      } else {
+        p.vx += p.ax * dt; p.vy += p.ay * dt;
+        if (p.drag) { const k = Math.exp(-p.drag * dt); p.vx *= k; p.vy *= k; }
+        p.x += p.vx * dt; p.y += p.vy * dt;
+      }
+      p.rot += p.vr * dt;
+    }
+  }
+
+  function starPath(r, inner) {
+    g.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const a = i * Math.PI / 5 - Math.PI / 2, rr = i % 2 ? r * inner : r;
+      g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+    }
+    g.closePath();
+  }
+
+  function draw() {
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, W, H);
+    g.lineJoin = 'round'; g.lineCap = 'round';
+    for (let i = 0; i < list.length; i++) {
+      const p = list[i], k = p.age / p.life;
+      const a = k > 0.65 ? 1 - (k - 0.65) / 0.35 : 1;
+      g.globalAlpha = Math.max(0, a);
+      g.save(); g.translate(p.x, p.y); g.rotate(p.rot);
+      const s = p.size;
+      switch (p.kind) {
+        case 'star':
+          g.fillStyle = p.color; g.strokeStyle = '#2a1740'; g.lineWidth = 2.5;
+          starPath(s, 0.45); g.fill(); g.stroke(); break;
+        case 'ting': // 4-point sparkle
+          g.fillStyle = p.color; g.beginPath();
+          g.moveTo(0, -s); g.quadraticCurveTo(0, 0, s, 0); g.quadraticCurveTo(0, 0, 0, s);
+          g.quadraticCurveTo(0, 0, -s, 0); g.quadraticCurveTo(0, 0, 0, -s); g.fill(); break;
+        case 'swirl': // dizzy spiral
+          g.strokeStyle = p.color; g.lineWidth = 3; g.beginPath();
+          for (let t = 0; t < 9; t += 0.4) { const r = t * s / 9; g.lineTo(Math.cos(t) * r, Math.sin(t) * r); }
+          g.stroke(); break;
+        case 'drop':
+          g.fillStyle = p.color; g.strokeStyle = '#2a1740'; g.lineWidth = 2;
+          g.beginPath(); g.moveTo(0, -s * 1.3);
+          g.bezierCurveTo(s, -s * 0.1, s * 0.9, s, 0, s); g.bezierCurveTo(-s * 0.9, s, -s, -s * 0.1, 0, -s * 1.3);
+          g.fill(); g.stroke(); break;
+        case 'puff': {
+          const gr = 1 + k * 0.9;
+          g.fillStyle = p.color; g.strokeStyle = 'rgba(42,23,64,.55)'; g.lineWidth = 2;
+          [[0, 0, 1], [-0.7, 0.3, 0.7], [0.7, 0.25, 0.75], [0.1, -0.6, 0.65]].forEach(function (c) {
+            g.beginPath(); g.arc(c[0] * s * gr, c[1] * s * gr, c[2] * s * gr, 0, 6.3); g.fill(); g.stroke();
+          });
+          g.fillStyle = p.color; g.beginPath(); g.arc(0, 0, s * gr * 0.95, 0, 6.3); g.fill(); break;
+        }
+        case 'confetti':
+          g.fillStyle = p.color; g.scale(1, Math.cos(p.age * 9 + p.size)); g.fillRect(-s * 0.5, -s * 0.28, s, s * 0.56); break;
+        case 'feather':
+          g.fillStyle = p.color; g.strokeStyle = '#2a1740'; g.lineWidth = 1.8;
+          g.beginPath(); g.ellipse(0, 0, s, s * 0.38, 0, 0, 6.3); g.fill(); g.stroke(); break;
+        case 'paper':
+          g.fillStyle = p.color; g.strokeStyle = '#2a1740'; g.lineWidth = 1.5;
+          g.scale(1, Math.cos(p.age * 8 + p.size)); g.fillRect(-s, -s * 0.7, s * 2, s * 1.4); g.strokeRect(-s, -s * 0.7, s * 2, s * 1.4); break;
+        case 'heart':
+          g.fillStyle = p.color; g.strokeStyle = '#2a1740'; g.lineWidth = 2;
+          g.beginPath(); g.moveTo(0, s * 0.9);
+          g.bezierCurveTo(-s * 1.4, -s * 0.1, -s * 0.6, -s * 1.1, 0, -s * 0.4);
+          g.bezierCurveTo(s * 0.6, -s * 1.1, s * 1.4, -s * 0.1, 0, s * 0.9); g.fill(); g.stroke(); break;
+        case 'plus':
+          g.fillStyle = p.color; g.strokeStyle = '#2a1740'; g.lineWidth = 2;
+          g.beginPath();
+          g.rect(-s * 0.3, -s, s * 0.6, s * 2); g.rect(-s, -s * 0.3, s * 2, s * 0.6);
+          g.fill(); g.stroke(); break;
+        case 'spark':
+          g.strokeStyle = p.color; g.lineWidth = 3.5; g.beginPath(); g.moveTo(-s, 0); g.lineTo(s, 0); g.stroke(); break;
+        case 'tooth':
+          g.fillStyle = '#fff'; g.strokeStyle = '#2a1740'; g.lineWidth = 2.5;
+          g.beginPath(); g.roundRect ? g.roundRect(-s * 0.5, -s * 0.7, s, s * 1.4, 4) : g.rect(-s * 0.5, -s * 0.7, s, s * 1.4);
+          g.fill(); g.stroke(); break;
+      }
+      g.restore();
+    }
+    g.globalAlpha = 1;
+  }
+  return { resize: resize, spawn: spawn, update: update, draw: draw, count: function () { return list.length; } };
+})();
+
+/* ---------------------------------------------------------------------
+   Weapons: each one is an original cartoon SVG (hitting end points UP).
+   power = damage; shake = screen shake px; squash = head squash amount.
+   --------------------------------------------------------------------- */
+const OL = 'stroke="#2a1740" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"';
+const WEAPONS = [
+  {
+    id: 'fist', name: 'Yumruq', power: 12, shake: 8, squash: 0.12, tip: 0.40, sound: 'fist', fx: 'stars',
+    words: ['BAM!', 'TƏK!', 'VAY!', 'ŞAP!'],
+    svg: `<svg viewBox="0 0 200 200"><g ${OL}>
+      <path d="M66 204 72 150H128L134 204z" fill="#3f6fd8"/>
+      <rect x="60" y="136" width="80" height="22" rx="9" fill="#f6f2e8"/>
+      <path d="M64 142V84H136V142z" fill="#ffc68c"/>
+      <rect x="62" y="40" width="20" height="64" rx="10" fill="#ffc68c"/>
+      <rect x="80" y="28" width="20" height="70" rx="10" fill="#ffc68c"/>
+      <rect x="98" y="28" width="20" height="70" rx="10" fill="#ffc68c"/>
+      <rect x="116" y="40" width="20" height="64" rx="10" fill="#ffc68c"/>
+      <path d="M66 114C62 94 120 96 122 114 124 130 70 134 66 114z" fill="#ffd8ae"/>
+      <path d="M71 52V70M89 42V60M107 42V60M125 52V70" stroke="#fff" stroke-opacity=".6" stroke-width="4"/></g></svg>`
+  },
+  {
+    id: 'glove', name: 'Boks əlcəyi', power: 16, shake: 11, squash: 0.17, tip: 0.40, sound: 'glove', fx: 'stars',
+    words: ['BAM!', 'VAY!', 'TƏK!', 'ŞAP!'],
+    svg: `<svg viewBox="0 0 200 200"><g ${OL}>
+      <rect x="56" y="150" width="88" height="46" rx="11" fill="#f6f2e8"/>
+      <path d="M62 164H138M62 180H138" stroke-width="3" stroke-opacity=".5"/>
+      <path d="M60 154C40 118 38 56 78 34 118 14 164 38 154 94 151 118 144 136 142 154z" fill="#e8332e"/>
+      <path d="M62 132C32 128 28 86 58 78 76 74 82 92 76 110z" fill="#cf2622"/>
+      <ellipse cx="108" cy="58" rx="24" ry="12" fill="#fff" opacity=".4" transform="rotate(-25 108 58)" stroke="none"/>
+      <path d="M82 164 118 178M118 164 82 178" stroke-width="4"/></g></svg>`
+  },
+  {
+    id: 'slipper', name: 'Tərlik', power: 11, shake: 6, squash: 0.10, tip: 0.44, sound: 'slipper', fx: 'dust',
+    words: ['ŞAP!', 'ŞAP!', 'TƏK!', 'VAY!'],
+    svg: `<svg viewBox="0 0 200 200"><g ${OL}>
+      <path d="M100 8C148 8 156 74 148 128 144 174 128 196 100 196 72 196 56 174 52 128 44 74 52 8 100 8z" fill="#ffcf5c"/>
+      <path d="M100 28C136 28 142 80 136 128 132 162 122 180 100 180 78 180 68 162 64 128 58 80 64 28 100 28z" fill="#f0b23c" stroke="none"/>
+      <path d="M54 66C62 20 138 20 146 66L144 112C122 98 78 98 56 112z" fill="#2fc4b6"/>
+      <path d="M56 112 66 124 76 112 86 124 96 112 106 124 116 112 126 124 136 112 144 118" fill="none" stroke-width="5"/>
+      <circle cx="82" cy="70" r="11" fill="#fff" stroke-width="4.5"/><circle cx="118" cy="70" r="11" fill="#fff" stroke-width="4.5"/>
+      <circle cx="85" cy="73" r="4.5" fill="#2a1740" stroke="none"/><circle cx="115" cy="73" r="4.5" fill="#2a1740" stroke="none"/>
+      <path d="M66 52 94 62M134 52 106 62" stroke-width="6"/></g></svg>`
+  },
+  {
+    id: 'bat', name: 'Beysbol çomağı', power: 20, shake: 14, squash: 0.19, tip: 0.43, sound: 'bat', fx: 'stars',
+    words: ['TƏK!', 'BAM!', 'VAY!', 'ŞAP!'],
+    svg: `<svg viewBox="0 0 200 200"><g ${OL}>
+      <path d="M82 18C90 4 110 4 118 18L126 108C128 134 110 146 108 158L108 170H92L92 158C90 146 72 134 74 108z" fill="#dba35e"/>
+      <path d="M92 24 94 100M106 28 108 96" stroke="#b9783a" stroke-width="4" fill="none"/>
+      <rect x="91" y="146" width="18" height="34" fill="#e8332e"/>
+      <path d="M91 156 109 150M91 166 109 160M91 176 109 170" stroke="#fff" stroke-width="4" stroke-opacity=".7"/>
+      <ellipse cx="100" cy="186" rx="17" ry="9" fill="#dba35e"/>
+      <path d="M84 30 86 90" stroke="#fff" stroke-opacity=".45" stroke-width="5" fill="none"/></g></svg>`
+  },
+  {
+    id: 'chicken', name: 'Rezin toyuq', power: 7, shake: 4, squash: 0.08, tip: 0.40, sound: 'chicken', fx: 'feathers',
+    words: ['ŞAP!', 'VAY!', 'TƏK!', 'BAM!'],
+    svg: `<svg viewBox="0 0 200 200"><g ${OL}>
+      <path d="M92 148 84 190M108 148 116 190M72 190 84 190 96 190M104 190 116 190 128 190" fill="none" stroke="#ff9a1f" stroke-width="7"/>
+      <path d="M92 66C60 70 52 128 100 150 148 128 140 70 108 66z" fill="#ffe14a"/>
+      <path d="M62 100C42 104 40 134 62 140 76 128 74 112 62 100z" fill="#ffd21f"/>
+      <path d="M104 64C130 40 150 56 142 78" fill="none" stroke="#ffe14a" stroke-width="20"/>
+      <path d="M104 64C130 40 150 56 142 78" fill="none" stroke-width="5"/>
+      <circle cx="150" cy="86" r="19" fill="#ffe14a"/>
+      <path d="M144 62 150 50 158 64 166 54 166 70z" fill="#ff3d3d" stroke-width="4.5"/>
+      <path d="M163 90 188 98 164 104z" fill="#ff9a1f" stroke-width="4.5"/>
+      <circle cx="153" cy="82" r="6.5" fill="#fff" stroke-width="4"/><circle cx="154" cy="84" r="2.6" fill="#2a1740" stroke="none"/>
+      <path d="M144 74 162 78" stroke-width="4"/>
+      <path d="M86 90C96 84 112 86 116 96" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="5"/></g></svg>`
+  },
+  {
+    id: 'pan', name: 'Tava', power: 22, shake: 15, squash: 0.2, tip: 0.43, sound: 'pan', fx: 'stars',
+    words: ['DONG!', 'TƏK!', 'BAM!', 'VAY!'],
+    svg: `<svg viewBox="0 0 200 200"><g ${OL}>
+      <path d="M88 118H112V186Q112 198 100 198 88 198 88 186z" fill="#7a4e33"/>
+      <circle cx="100" cy="176" r="5" fill="#2a1740" stroke="none"/>
+      <rect x="92" y="108" width="16" height="20" fill="#4a4f63"/>
+      <circle cx="100" cy="66" r="60" fill="#555b73"/>
+      <circle cx="100" cy="66" r="47" fill="#2f3345" stroke-width="4"/>
+      <path d="M60 64C56 38 90 32 108 42 130 36 148 58 138 78 130 96 100 92 84 98 64 98 62 82 60 64z" fill="#fff" stroke-width="4.5"/>
+      <circle cx="104" cy="66" r="17" fill="#ffc21a" stroke-width="4"/>
+      <ellipse cx="98" cy="59" rx="6" ry="4" fill="#fff" stroke="none" opacity=".8"/>
+      <path d="M48 30C58 18 74 12 90 12" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="5"/></g></svg>`
+  },
+  {
+    id: 'news', name: 'Qəzet', power: 6, shake: 3, squash: 0.07, tip: 0.44, sound: 'paper', fx: 'paper',
+    words: ['ŞAP!', 'TƏK!', 'VAY!', 'BAM!'],
+    svg: `<svg viewBox="0 0 200 200"><g ${OL}>
+      <path d="M70 28H130V186H70z" fill="#f4f0e3"/>
+      <ellipse cx="100" cy="28" rx="30" ry="13" fill="#e2dcc6"/>
+      <path d="M100 28m-16 0a16 7 0 1 1 32 0 11 5 0 1 1-22 0" fill="none" stroke-width="3.5"/>
+      <text x="100" y="62" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="17" font-weight="900" fill="#2a1740" stroke="none">XƏBƏR</text>
+      <rect x="80" y="70" width="40" height="26" rx="3" fill="#9fd0f0" stroke-width="3.5"/>
+      <path d="M80 108H120M80 120H120M80 132H108M80 144H120M80 156H112" stroke="#9a9684" stroke-width="4"/>
+      <rect x="66" y="104" width="68" height="12" rx="6" fill="#e8332e"/>
+      <path d="M78 36 78 180" stroke="#fff" stroke-opacity=".6" stroke-width="4"/></g></svg>`
+  }
+];
+
+/* ---------------------------------------------------------------------
+   Gameplay constants
+   --------------------------------------------------------------------- */
+const MAX_DAMAGE = 100;
+const KO_LETTERS = ['K', 'O', '-', 'M', 'E', 'T', 'R'];
+const HIT_STOP = 0.075;      // freeze at the moment of impact (seconds)
+const FLY_TIME = 0.24;
+const RECOIL_TIME = 0.32;
+// permanent marks that appear as damage accumulates
+const MARKS = [
+  { id: 'bump1', at: 14 }, { id: 'bruiseL', at: 26 }, { id: 'noseRed', at: 38 },
+  { id: 'bump2', at: 50 }, { id: 'tooth', at: 62 }, { id: 'bruiseR', at: 76 }, { id: 'bump3', at: 88 }
+];
+const SAYINGS = [
+  ['Mən sadəcə stajyoram!', 'Ay! Nə üçün?', 'Çay gətirmişdim axı...', 'Bu, iş təlimatında yoxdur!', 'Mən nə etdim ki?'],
+  ['Hesabat sabah hazır olar!', 'Kapitana deyəcəyəm!', 'Əfv edin, bir də olmaz!', 'Gəmidə yer qalmadı?', 'Bəsdir də, bəsdir...'],
+  ['Bəsdir, ağlayıram!', 'Anaaa!', 'Bir də gecikməyəcəm!', 'Üzr istəyirəm... hıçqırıq!', 'Evə getmək istəyirəm...'],
+  ['...zzz...', 'Mən... xoşbəxtəm...', 'İş saatı hələ bitməyib?', '...ulduzlar... gözəldir...']
+];
+
+/* ---------------------------------------------------------------------
+   DOM
+   --------------------------------------------------------------------- */
+const gadget = $('gadget'), shaker = $('shaker'), facebox = $('facebox');
+const weaponEl = $('weapon'), fxLayer = $('fxLayer'), bubbleEl = $('bubble'), toastEl = $('toast');
+const el = {
+  head: $('headG'), body: $('bodyG'), hair: $('hairG'),
+  eyeL: $('eyeLG'), eyeR: $('eyeRG'), eyeLopen: $('eyeLopen'), eyeRopen: $('eyeRopen'),
+  eyeLspiral: $('eyeLspiral'), eyeRspiral: $('eyeRspiral'), eyeLsq: $('eyeLsq'), eyeRsq: $('eyeRsq'),
+  spL: $('spL'), spR: $('spR'), pupL: $('pupL'), pupR: $('pupR'),
+  browL: $('browL'), browR: $('browR'), mouth: $('mouthPath'), mouthClip: $('mouthClip'),
+  tongue: $('tongue'), teeth: $('teethRow'), cheekL: $('cheekL'), cheekR: $('cheekR'),
+  puffL: $('puffL'), puffR: $('puffR'), tears: $('tearsG'), sweat: $('sweatG'), birds: $('birdsG'),
+  noseG: $('noseG'), noseRed: $('noseRed')
+};
+const teethEls = Array.prototype.slice.call(document.querySelectorAll('#teethRow .tooth'));
+const svgNS = 'http://www.w3.org/2000/svg';
+
+/* ---------------------------------------------------------------------
+   Springs: damped springs give the head a rubbery, physical reaction.
+   --------------------------------------------------------------------- */
+function mkSpring(rest, k, d) { return { v: rest, vel: 0, rest: rest, k: k, d: d }; }
+function stepSpring(s, dt) {
+  if (dt <= 0) return;
+  const n = Math.max(1, Math.ceil(dt / 0.008)), h = dt / n;
+  for (let i = 0; i < n; i++) {
+    s.vel += (-s.k * (s.v - s.rest) - s.d * s.vel) * h;
+    s.v += s.vel * h;
+  }
+}
+const sp = {
+  x: mkSpring(0, 130, 10), y: mkSpring(0, 130, 10), rot: mkSpring(0, 115, 8.5),
+  sx: mkSpring(1, 190, 11), sy: mkSpring(1, 190, 11), hair: mkSpring(0, 80, 5.5),
+  puff: mkSpring(0, 150, 11), bodyY: mkSpring(0, 70, 9)
+};
+
+/* ---------------------------------------------------------------------
+   State
+   --------------------------------------------------------------------- */
+let mode = 'intro';          // intro | play
+let victim = Store.get('name', 'praktikant');
+let totalHits = +Store.get('hits', 0) || 0;
+let weapon = null;
+let damage = 0, stage = 0, ko = false, healing = false;
+let litCount = 0;
+const marks = new Set();
+let time = 0, hitStop = 0, trauma = 0, zoom = 0, flash = 0;
+let hurt = 0, hurtDir = 0, birdBoost = 0;
+let blinkT = 0, nextBlink = 2.5, sweatT = 0;
+const fly = { active: false, phase: '', t: 0, dir: 0, sx: 0, sy: 0, cx: 0, cy: 0, rot: 0, size: 0 };
+const timers = [];
+const pointer = { x: -1, y: -1, has: false };
+
+function after(sec, fn) { timers.push({ t: sec, fn: fn }); }
+function runTimers(dt) {
+  for (let i = 0; i < timers.length; i++) {
+    const T = timers[i]; T.t -= dt;
+    if (T.t <= 0) { timers.splice(i, 1); i--; T.fn(); }
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Layout helpers (offset-based so they ignore the shake transform)
+   --------------------------------------------------------------------- */
+function relRect(node) {
+  let x = 0, y = 0, n = node;
+  while (n && n !== gadget) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
+  return { x: x, y: y, w: node.offsetWidth, h: node.offsetHeight };
+}
+// converts face SVG coordinates (viewBox -24..424) to gadget pixels
+function faceXY(u, v) {
+  const r = relRect(facebox);
+  return { x: r.x + (u + 24) / 448 * r.w, y: r.y + (v + 24) / 448 * r.h };
+}
+
+/* ---------------------------------------------------------------------
+   Face rig: expression targets per stage, smoothly blended each frame
+   --------------------------------------------------------------------- */
+const STAGE_EXPR = [
+  { lid: 0.0, brow: 0.0, smile: 0.95, open: 0.28, wide: 0.0, tears: 0, sweat: 0 },   // smiling
+  { lid: 0.1, brow: 0.8, smile: -0.1, open: 0.12, wide: 0.0, tears: 0, sweat: 1 },   // worried
+  { lid: 0.5, brow: 1.0, smile: -0.7, open: 0.9, wide: 0.5, tears: 1, sweat: 1 },   // crying
+  { lid: 0.0, brow: 0.6, smile: -0.2, open: 0.55, wide: 0.0, tears: 0, sweat: 0 }   // knocked out
+];
+const ex = { lid: 0, brow: 0, smile: 0.95, open: 0.28, wide: 0, twist: 0 };
+let eyeMode = 'open', shownEyeMode = '';
+
+// spiral path for dizzy eyes
+function spiralPath(cx, cy, r, turns) {
+  let d = '';
+  const steps = 60;
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps, a = t * turns * Math.PI * 2, rr = t * r;
+    d += (i ? 'L' : 'M') + (cx + Math.cos(a) * rr).toFixed(1) + ' ' + (cy + Math.sin(a) * rr).toFixed(1);
+  }
+  return d;
+}
+el.spL.setAttribute('d', spiralPath(0, 0, 21, 3));
+el.spR.setAttribute('d', spiralPath(0, 0, 21, 3));
+
+// parametric mouth: smile -1..1, open 0..1, twist -1..1 (sideways)
+function mouthShape(m) {
+  const cx = 200, cy = 254;
+  const w = 38 - m.open * 7 + m.wide * 5;
+  const cornerY = cy - m.smile * 15;
+  const lY = cornerY + m.twist * 13, rY = cornerY - m.twist * 13;
+  const sh = m.twist * 10;
+  const upC = cy + m.smile * 20 - m.open * 6;
+  const lowC = upC + 4 + m.open * 50;
+  const lx = cx - w + sh * 0.5, rx = cx + w + sh * 0.5;
+  const c1 = cx - w * 0.55 + sh, c2 = cx + w * 0.55 + sh;
+  const f = n => n.toFixed(1);
+  return {
+    d: 'M' + f(lx) + ' ' + f(lY) + 'C' + f(c1) + ' ' + f(upC) + ' ' + f(c2) + ' ' + f(upC) + ' ' + f(rx) + ' ' + f(rY) +
+       'C' + f(c2 + 4) + ' ' + f(lowC) + ' ' + f(c1 - 4) + ' ' + f(lowC) + ' ' + f(lx) + ' ' + f(lY) + 'Z',
+    upMid: 0.25 * cornerY + 0.75 * upC, lowMid: 0.25 * cornerY + 0.75 * lowC, cx: cx + sh * 0.8
+  };
+}
+
+/* birds that circle the head when the victim is groggy */
+const birds = [];
+for (let i = 0; i < 4; i++) {
+  const g = document.createElementNS(svgNS, 'g');
+  g.innerHTML = '<g class="bflip"><ellipse cx="0" cy="0" rx="10" ry="7.5" fill="#ffd43b" stroke="#2a1740" stroke-width="3"/>' +
+    '<path class="bwing" d="M-3 -2Q-9 -16 2 -13Q6 -8 4 -2z" fill="#f5a623" stroke="#2a1740" stroke-width="2.5" stroke-linejoin="round"/>' +
+    '<circle cx="9" cy="-5" r="6" fill="#ffd43b" stroke="#2a1740" stroke-width="3"/>' +
+    '<path d="M14 -6l8 2-8 3z" fill="#ff7a1f" stroke="#2a1740" stroke-width="2" stroke-linejoin="round"/>' +
+    '<circle cx="10" cy="-6.5" r="1.7" fill="#2a1740"/><path d="M-10 0l-8-3M-10 1l-8 2" stroke="#2a1740" stroke-width="2.5" stroke-linecap="round"/></g>';
+  el.birds.appendChild(g);
+  birds.push({ g: g, flip: g.firstChild, wing: g.querySelector('.bwing'), a: i * Math.PI / 2, alpha: 0 });
+}
+
+let pupX = 0, pupY = 0;
+function updateFace(dt) {
+  // --- springs ---
+  for (const k in sp) stepSpring(sp[k], dt);
+
+  // rest pose depends on state (K.O. = slumped backwards)
+  if (ko) { sp.y.rest = 34; sp.rot.rest = 13; sp.sy.rest = 0.96; sp.bodyY.rest = 20; sp.puff.rest = 0; }
+  else { sp.y.rest = 0; sp.rot.rest = 0; sp.sy.rest = 1; sp.bodyY.rest = 0; sp.puff.rest = stage === 2 ? 0.25 : 0; }
+
+  const breath = Math.sin(time * 2.2);
+  const sob = (stage === 2 && !ko) ? Math.sin(time * 24) * 1.6 : 0;
+  const idleY = ko ? breath * 1.2 : breath * 2.2 + sob;
+  const idleRot = ko ? 0 : Math.sin(time * 1.3) * 1.1;
+  const tx = sp.x.v, ty = sp.y.v + idleY, rot = sp.rot.v + idleRot;
+  el.head.setAttribute('transform',
+    'translate(' + tx.toFixed(2) + ' ' + ty.toFixed(2) + ') rotate(' + rot.toFixed(2) + ' 200 322) ' +
+    'translate(200 190) scale(' + sp.sx.v.toFixed(3) + ' ' + sp.sy.v.toFixed(3) + ') translate(-200 -190)');
+  el.body.setAttribute('transform', 'translate(0 ' + (sp.bodyY.v + breath * 0.8).toFixed(2) + ')');
+  el.hair.setAttribute('transform', 'rotate(' + (-sp.rot.v * 0.7 + sp.hair.v).toFixed(2) + ' 200 110)');
+
+  // --- expression target ---
+  const T = STAGE_EXPR[ko ? 3 : stage];
+  let tOpen = T.open, tSmile = T.smile, tBrow = T.brow, tTwist = 0, tLid = T.lid, tWide = T.wide;
+  if (stage >= 1 && !ko) tOpen += Math.sin(time * (stage === 2 ? 22 : 8)) * (stage === 2 ? 0.07 : 0.04);   // wobbling lip
+  if (ko) { tOpen += Math.sin(time * 1.6) * 0.05; }
+  if (hurt > 0) {
+    hurt -= dt;
+    tOpen = Math.max(tOpen, 0.8); tSmile = -0.75; tBrow = 1; tWide = 0.8;
+    tTwist = hurtDir * 0.9;
+    eyeMode = ko ? 'spiral' : 'squeeze';
+  } else {
+    eyeMode = ko ? 'spiral' : 'open';
+  }
+  const k = 1 - Math.exp(-dt * 16);
+  ex.open += (tOpen - ex.open) * k; ex.smile += (tSmile - ex.smile) * k; ex.brow += (tBrow - ex.brow) * k;
+  ex.twist += (tTwist - ex.twist) * k; ex.lid += (tLid - ex.lid) * k; ex.wide += (tWide - ex.wide) * k;
+
+  // blink
+  if (!ko && eyeMode === 'open') {
+    nextBlink -= dt;
+    if (nextBlink <= 0) { blinkT = 0.12; nextBlink = rand(2.2, 4.8); }
+  }
+  if (blinkT > 0) blinkT -= dt;
+  const lidAmt = clamp(ex.lid + (blinkT > 0 ? 1 : 0), 0, 1);
+  const lidScale = lerp(1, 0.12, lidAmt);
+
+  // --- eyes ---
+  if (eyeMode !== shownEyeMode) {
+    shownEyeMode = eyeMode;
+    el.eyeLopen.style.display = el.eyeRopen.style.display = eyeMode === 'open' ? '' : 'none';
+    el.eyeLspiral.style.display = el.eyeRspiral.style.display = eyeMode === 'spiral' ? '' : 'none';
+    el.eyeLsq.style.display = el.eyeRsq.style.display = eyeMode === 'squeeze' ? '' : 'none';
+  }
+  el.eyeL.setAttribute('transform', 'translate(158 182) scale(1 ' + lidScale.toFixed(3) + ') translate(-158 -182)');
+  el.eyeR.setAttribute('transform', 'translate(242 182) scale(1 ' + lidScale.toFixed(3) + ') translate(-242 -182)');
+  if (eyeMode === 'spiral') {
+    el.spL.setAttribute('transform', 'translate(158 182) rotate(' + (time * 420).toFixed(0) + ')');
+    el.spR.setAttribute('transform', 'translate(242 182) rotate(' + (-time * 420).toFixed(0) + ')');
+  } else if (eyeMode === 'open') {
+    // pupils follow the pointer
+    let tx2 = 0, ty2 = 0;
+    if (pointer.has) {
+      const r = facebox.getBoundingClientRect();
+      const dx = pointer.x - (r.left + r.width / 2), dy = pointer.y - (r.top + r.height / 2);
+      const len = Math.hypot(dx, dy) || 1, m = Math.min(1, len / (r.width * 0.6));
+      tx2 = dx / len * 9 * m; ty2 = dy / len * 8 * m;
+    } else { tx2 = Math.sin(time * 0.7) * 3; ty2 = Math.cos(time * 0.9) * 2; }
+    if (stage === 2) { tx2 = 0; ty2 = 6; }
+    pupX += (tx2 - pupX) * Math.min(1, dt * 10); pupY += (ty2 - pupY) * Math.min(1, dt * 10);
+    const tr = 'translate(' + pupX.toFixed(1) + ' ' + pupY.toFixed(1) + ')';
+    el.pupL.setAttribute('transform', tr); el.pupR.setAttribute('transform', tr);
+  }
+
+  // --- brows: positive = worried (inner ends up), tilted around their centres ---
+  const bAng = ex.brow * 17, bLift = -ex.brow * 3 + (hurt > 0 ? -6 : 0) + (ko ? 4 : 0);
+  el.browL.setAttribute('transform', 'translate(0 ' + bLift.toFixed(1) + ') rotate(' + (-bAng).toFixed(1) + ' 157 134)');
+  el.browR.setAttribute('transform', 'translate(0 ' + bLift.toFixed(1) + ') rotate(' + bAng.toFixed(1) + ' 243 134)');
+
+  // --- mouth ---
+  const ms = mouthShape({ smile: ex.smile, open: clamp(ex.open, 0, 1.1), twist: ex.twist, wide: ex.wide });
+  el.mouth.setAttribute('d', ms.d); el.mouthClip.setAttribute('d', ms.d);
+  el.teeth.setAttribute('transform', 'translate(' + ms.cx.toFixed(1) + ' ' + (ms.upMid - 2).toFixed(1) + ')');
+  el.tongue.setAttribute('cx', ms.cx.toFixed(1)); el.tongue.setAttribute('cy', (ms.lowMid - 4 + (ko ? 10 : 0)).toFixed(1));
+
+  // --- cheeks puff ---
+  const pf = clamp(sp.puff.v, 0, 1.4);
+  el.puffL.setAttribute('opacity', pf > 0.04 ? 1 : 0); el.puffR.setAttribute('opacity', pf > 0.04 ? 1 : 0);
+  el.puffL.setAttribute('r', (6 + pf * 28).toFixed(1)); el.puffR.setAttribute('r', (6 + pf * 28).toFixed(1));
+  const cs = 1 + pf * 0.45;
+  el.cheekL.setAttribute('transform', 'translate(128 226) scale(' + cs.toFixed(2) + ') translate(-128 -226)');
+  el.cheekR.setAttribute('transform', 'translate(272 226) scale(' + cs.toFixed(2) + ') translate(-272 -226)');
+
+  // --- tears / sweat toggles ---
+  el.tears.classList.toggle('on', stage === 2 && !ko);
+  el.sweat.classList.toggle('on', stage >= 1 && !ko);
+
+  // --- birds ---
+  const wantBirds = ko ? 4 : (birdBoost > 0 ? 2 : (stage === 2 ? 1 : 0));
+  if (birdBoost > 0) birdBoost -= dt;
+  for (let i = 0; i < birds.length; i++) {
+    const b = birds[i];
+    b.alpha += ((i < wantBirds ? 1 : 0) - b.alpha) * Math.min(1, dt * 6);
+    b.a += dt * (2.6 + i * 0.15);
+    const a = b.a;
+    const depth = Math.sin(a);
+    const bx = 200 + Math.cos(a) * 92 + tx, by = 72 + depth * 20 + ty * 0.8 + (ko ? 28 : 0);
+    const sc = (0.85 + depth * 0.22) * (b.alpha > 0.02 ? 1 : 0.01);
+    const dirSign = -Math.sin(a) > 0 ? 1 : -1;
+    b.g.setAttribute('transform', 'translate(' + bx.toFixed(1) + ' ' + by.toFixed(1) + ') scale(' + (sc * dirSign).toFixed(2) + ' ' + sc.toFixed(2) + ')');
+    b.g.setAttribute('opacity', clamp(b.alpha, 0, 1).toFixed(2));
+    b.wing.setAttribute('transform', 'rotate(' + (Math.sin(time * 26 + i) * 28).toFixed(0) + ' -2 -2)');
+  }
+
+  // occasional sweat drops flying off a worried victim
+  if (stage >= 1 && !ko) {
+    sweatT -= dt;
+    if (sweatT <= 0) {
+      sweatT = rand(0.9, 1.6);
+      const p = faceXY(rand(120, 300), 120);
+      FX.spawn({ kind: 'drop', x: p.x, y: p.y, vx: rand(-40, 40), vy: rand(-90, -30), ay: 420, size: 5, color: '#9be3ff', life: 0.8 });
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Marks: permanent bruises/bumps, plus plasters while healing
+   --------------------------------------------------------------------- */
+function setMark(id, on) {
+  if (id === 'tooth') {
+    teethEls.forEach(function (t, i) {
+      t.style.display = (on && t.classList.contains('gap')) ? 'none' : '';
+      t.setAttribute('transform', on ? 'rotate(' + [-9, 7, 0, 12, -11][i] + ' ' + (parseFloat(t.getAttribute('x')) + 5.7) + ' -3)' : '');
+    });
+    return;
+  }
+  const n = $(id); if (n) n.classList.toggle('on', on);
+}
+
+/* ---------------------------------------------------------------------
+   Effects helpers
+   --------------------------------------------------------------------- */
+function burstText(text, x, y) {
+  const d = document.createElement('div');
+  d.className = 'burst';
+  d.style.left = x + 'px'; d.style.top = y + 'px';
+  d.style.setProperty('--rot', rand(-14, 14).toFixed(1) + 'deg');
+  const col = pick(['#ffd23f', '#ff5a5a', '#59d8ff', '#ff9a2e', '#7bf06b']);
+  let pts = '';
+  for (let i = 0; i < 28; i++) {
+    const a = i * Math.PI / 14, r = i % 2 ? 40 : (58 + Math.random() * 6);
+    pts += (Math.cos(a) * r * 1.22).toFixed(1) + ',' + (Math.sin(a) * r * 0.9).toFixed(1) + ' ';
+  }
+  const fs = text.length > 4 ? 25 : 32;
+  d.innerHTML = '<svg viewBox="-80 -58 160 116"><polygon points="' + pts + '" fill="' + col + '" stroke="#2a1740" stroke-width="5" stroke-linejoin="round"/>' +
+    '<text x="0" y="' + (fs * 0.36) + '" text-anchor="middle" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="' + fs + '" fill="#fff" stroke="#2a1740" stroke-width="6" paint-order="stroke" stroke-linejoin="round">' + text + '</text></svg>';
+  fxLayer.appendChild(d);
+  setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 950);
+}
+
+function burstStars(x, y, n, speed) {
+  for (let i = 0; i < n; i++) {
+    const a = rand(0, Math.PI * 2), v = rand(0.4, 1) * speed;
+    FX.spawn({ kind: 'star', x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 60, ay: 380, drag: 1.4, size: rand(7, 14), rot: rand(0, 6), vr: rand(-8, 8), color: pick(['#ffd23f', '#fff27a', '#ffb02e', '#ffffff']), life: rand(0.7, 1.2) });
+  }
+  for (let i = 0; i < n; i++) {
+    const a = rand(0, Math.PI * 2), v = rand(0.3, 1) * speed * 0.8;
+    FX.spawn({ kind: 'ting', x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, drag: 2, size: rand(5, 10), color: '#fff', life: rand(0.35, 0.7), rot: rand(0, 3), vr: rand(-4, 4) });
+  }
+}
+function puffs(x, y, n) {
+  for (let i = 0; i < n; i++) {
+    FX.spawn({ kind: 'puff', x: x + rand(-14, 14), y: y + rand(-8, 8), vx: rand(-70, 70), vy: rand(-60, 10), drag: 3, size: rand(8, 14), color: 'rgba(255,255,255,.92)', life: rand(0.45, 0.7) });
+  }
+}
+function sweatDrops(x, y, dirX) {
+  for (let i = 0; i < 5; i++) {
+    FX.spawn({ kind: 'drop', x: x, y: y, vx: (dirX || rand(-1, 1)) * rand(80, 220) + rand(-40, 40), vy: rand(-220, -60), ay: 560, size: rand(4, 7), color: '#9be3ff', life: rand(0.55, 0.9) });
+  }
+}
+function dizzyRings(n) {
+  const c = faceXY(200, 70), r = relRect(facebox);
+  for (let i = 0; i < n; i++) {
+    FX.spawn({ kind: 'swirl', x: c.x, y: c.y, size: rand(9, 13), color: '#fff', life: rand(1.5, 2.2), rot: rand(0, 6), vr: 9,
+      orbit: { cx: c.x, cy: c.y, rx: r.w * 0.2, ry: r.w * 0.045, speed: 4.2, phase: i * (Math.PI * 2 / n) } });
+  }
+}
+function confettiRain() {
+  const r = relRect(gadget);
+  for (let i = 0; i < 90; i++) {
+    FX.spawn({ kind: 'confetti', x: rand(0, gadget.clientWidth), y: rand(-80, -5), vx: rand(-40, 40), vy: rand(60, 200), ay: 60, size: rand(7, 13), rot: rand(0, 6), vr: rand(-6, 6), color: pick(['#ff5a5a', '#ffd23f', '#59d8ff', '#7bf06b', '#ff8cf0', '#ffffff']), life: rand(1.8, 3), drag: 0.4 });
+  }
+}
+function setTrauma(v) { trauma = Math.min(1, trauma + v * (REDUCED ? 0.3 : 1)); }
+
+let toastTimer = 0;
+function toast(text, ms) {
+  toastEl.textContent = text; toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, ms || 1700);
+}
+let bubbleTimer = 0;
+function say(text, ms) {
+  const r = relRect(facebox);
+  bubbleEl.textContent = text;
+  bubbleEl.style.left = clamp(r.x + r.w * 0.04, 6, gadget.clientWidth - 150) + 'px';
+  bubbleEl.style.top = (r.y + r.h * 0.8) + 'px';
+  bubbleEl.classList.add('show');
+  clearTimeout(bubbleTimer);
+  bubbleTimer = setTimeout(function () { bubbleEl.classList.remove('show'); }, ms || 1900);
+}
+
+/* ---------------------------------------------------------------------
+   Weapon flight director
+   --------------------------------------------------------------------- */
+function startFly(dir) {
+  const w = weapon;
+  const fr = relRect(facebox), F = fr.w;
+  const Wb = F * 0.62;                                   // weapon box size
+  weaponEl.style.width = weaponEl.style.height = Wb + 'px';
+  weaponEl.style.marginLeft = weaponEl.style.marginTop = (-Wb / 2) + 'px';
+  weaponEl.innerHTML = w.svg;
+  const rot = -dir * 38;                                 // tilt towards the face
+  const up = { x: Math.sin(rot * Math.PI / 180), y: -Math.cos(rot * Math.PI / 180) };
+  const center = { x: fr.x + F / 2, y: fr.y + F / 2 };
+  // dir -1 comes from the left and lands on the left cheek, 0 is an uppercut to the chin
+  const P = { x: center.x + dir * 0.17 * F, y: center.y + (dir === 0 ? 0.16 : 0.06) * F };
+  const sImp = 1.3;
+  fly.size = Wb;
+  fly.cx = P.x - up.x * w.tip * Wb * sImp;               // weapon centre at impact
+  fly.cy = P.y - up.y * w.tip * Wb * sImp;
+  fly.sx = fly.cx - up.x * F * 1.25;                     // start, back along the swing axis
+  fly.sy = fly.cy - up.y * F * 1.25;
+  fly.rot = rot; fly.dir = dir; fly.sImp = sImp;
+  fly.px = P.x; fly.py = P.y;
+  fly.active = true; fly.phase = 'fly'; fly.t = 0;
+  weaponEl.style.opacity = 1;
+  placeWeapon(fly.sx, fly.sy, 2.4, rot - dir * 25, 1);
+  SFX.whoosh();
+  arrowsDisabled(true);
+}
+function placeWeapon(x, y, s, r, o) {
+  weaponEl.style.transform = 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0) rotate(' + r.toFixed(1) + 'deg) scale(' + s.toFixed(3) + ')';
+  weaponEl.style.opacity = o;
+}
+function updateFly(dt) {
+  if (!fly.active) return;
+  fly.t += dt / (fly.phase === 'fly' ? FLY_TIME : RECOIL_TIME);
+  const p = clamp(fly.t, 0, 1);
+  if (fly.phase === 'fly') {
+    const e = easeInBack(p), s = lerp(2.4, fly.sImp, p * p);
+    placeWeapon(lerp(fly.sx, fly.cx, e), lerp(fly.sy, fly.cy, e), s, lerp(fly.rot - fly.dir * 25, fly.rot, easeOutCubic(p)), 1);
+    if (fly.t >= 1) { fly.phase = 'recoil'; fly.t = 0; impact(); }
+  } else {
+    const e = easeOutCubic(p), wob = weapon.id === 'chicken' ? Math.sin(p * 18) * 18 * (1 - p) : 0;
+    placeWeapon(lerp(fly.cx, fly.sx, 0.2 * e), lerp(fly.cy, fly.sy, 0.2 * e), lerp(fly.sImp, 2.1, e), fly.rot + fly.dir * -14 * e + wob, 1 - p * p);
+    if (fly.t >= 1) {
+      fly.active = false; fly.phase = ''; weaponEl.style.opacity = 0;
+      if (queuedDir !== null) { const d = queuedDir; queuedDir = null; if (!healing) requestHit(d); }
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Impact: damage, springs, particles, text, sounds, progress
+   --------------------------------------------------------------------- */
+function impact() {
+  const w = weapon, dir = fly.dir;
+  const dmg = w.power * rand(0.8, 1.2);
+  const willKO = !ko && damage + dmg >= MAX_DAMAGE;
+  hitStop = HIT_STOP + (willKO ? 0.07 : 0);
+  const prevDamage = damage;
+  damage += dmg;
+  totalHits++; Store.set('hits', totalHits);
+  const hb = $('hits'); hb.textContent = totalHits; hb.classList.remove('bump'); void hb.offsetWidth; hb.classList.add('bump');
+
+  // --- head reaction: springs get kicked away from the weapon ---
+  const pw = w.power;
+  hurt = 0.7; hurtDir = dir || (Math.random() < 0.5 ? -1 : 1);
+  const mult = ko ? 0.7 : 1;
+  if (dir === 0) {            // uppercut: chin snaps up
+    sp.y.vel -= (220 + 11 * pw) * mult; sp.y.v -= 6;
+    sp.sy.v = 1 - w.squash * 1.2; sp.sx.v = 1 + w.squash * 0.9;
+    sp.rot.vel += rand(-60, 60);
+  } else {                    // diagonal: head whips away and tilts
+    sp.x.vel += -dir * (190 + 9 * pw) * mult; sp.x.v += -dir * 5;
+    sp.rot.vel += -dir * (110 + 9 * pw) * mult; sp.rot.v += -dir * pw * 0.45;
+    sp.sx.v = 1 - w.squash; sp.sy.v = 1 + w.squash * 0.6;
+    sp.y.vel += 40;
+  }
+  sp.hair.vel += (dir || 1) * (320 + pw * 8);
+  sp.puff.v = 1; sp.puff.vel = 4;
+  sp.bodyY.vel += 120;
+
+  // --- screen juice ---
+  setTrauma(0.28 + w.shake / 22 + (willKO ? 0.3 : 0));
+  zoom = 0.035 * (REDUCED ? 0.3 : 1) + w.shake / 700;
+  flash = (willKO ? 0.8 : 0.5) * (REDUCED ? 0.35 : 1);
+
+  const ip = { x: fly.px, y: fly.py };
+  const q = faceXY(200, 190);
+  // everything visual that should start AFTER the freeze is scheduled with the game clock
+  SFX[w.sound](); buzz(pw >= 16 ? [45, 30, 70] : 28);
+  after(0.0, function () {
+    burstText(pick(w.words), ip.x + (dir === 0 ? 0 : -dir * 30), ip.y - 40);
+    burstStars(ip.x, ip.y, 7 + (pw > 15 ? 4 : 0), 260);
+    puffs(ip.x, ip.y, 3);
+    sweatDrops(q.x + dir * 20, q.y - 40, -dir);
+    if (w.fx === 'feathers') for (let i = 0; i < 8; i++) FX.spawn({ kind: 'feather', x: ip.x, y: ip.y, vx: rand(-200, 200), vy: rand(-250, -40), ay: 170, drag: 1.2, size: rand(7, 11), rot: rand(0, 6), vr: rand(-9, 9), color: pick(['#ffe14a', '#fff2a0', '#ffd21f']), life: rand(1, 1.6) });
+    if (w.fx === 'paper') for (let i = 0; i < 8; i++) FX.spawn({ kind: 'paper', x: ip.x, y: ip.y, vx: rand(-220, 220), vy: rand(-240, -30), ay: 220, drag: 1.3, size: rand(5, 8), rot: rand(0, 6), vr: rand(-8, 8), color: '#f4f0e3', life: rand(0.9, 1.5) });
+    if (w.fx === 'dust') puffs(ip.x, ip.y, 4);
+    if (pw >= 12) { dizzyRings(3); }
+    if (pw >= 16) birdBoost = 1.8;
+    if (Math.random() < 0.5) setTimeout(SFX.star, 120);
+  });
+
+  // --- progress (marks, meter, stage, K.O.) after the freeze ---
+  after(0.12, function () { applyProgress(prevDamage, willKO); });
+  // random speech bubble
+  if (!willKO && Math.random() < 0.38) after(0.55, function () { if (!healing) say(pick(SAYINGS[ko ? 3 : stage])); });
+}
+
+function litFor(d) { return Math.min(7, Math.floor(d / (MAX_DAMAGE / 7))); }
+
+function applyProgress(prevDamage, willKO) {
+  // K.O. meter letters
+  const lit = willKO ? 7 : litFor(damage);
+  const letters = $('kometer').children;
+  for (let i = litCount; i < lit; i++) {
+    letters[i].classList.add('on');
+    SFX.tick(1 + i * 0.12);
+  }
+  litCount = Math.max(litCount, lit);
+
+  // permanent marks
+  MARKS.forEach(function (m) {
+    if (damage >= m.at && !marks.has(m.id)) {
+      marks.add(m.id); setMark(m.id, true); SFX.pop();
+      const p = faceXY(200, 190);
+      burstStars(p.x, p.y, 3, 120);
+      if (m.id === 'tooth') {
+        // the front tooth pops out
+        const t = faceXY(200, 262);
+        FX.spawn({ kind: 'tooth', x: t.x, y: t.y, vx: rand(-90, 90), vy: -380, ay: 900, size: 11, rot: 0, vr: rand(-12, 12), life: 1.1 });
+        setTimeout(SFX.tooth, 350);
+      }
+    }
+  });
+
+  // stage progression: smiling -> worried -> crying
+  const newStage = lit < 2 ? 0 : lit < 4 ? 1 : 2;
+  if (newStage !== stage) {
+    stage = newStage;
+    if (!willKO) say(pick(SAYINGS[stage]), 2200);
+  }
+  if (willKO) triggerKO();
+}
+
+function triggerKO() {
+  ko = true; stage = 3;
+  $('kometer').classList.add('ko');
+  after(0.18, function () {
+    SFX.ko(); buzz([80, 50, 80, 50, 200]);
+    const k = $('koText'); k.classList.remove('go'); void k.offsetWidth; k.classList.add('go');
+    setTrauma(0.5);
+    const p = faceXY(200, 160);
+    burstStars(p.x, p.y, 16, 380);
+    confettiRain();
+    dizzyRings(4);
+    birdBoost = 99;
+  });
+  after(1.3, function () {
+    if (!healing) {
+      $('healBtn').classList.add('pulse');
+      toast('Qurban huşunu itirdi! Müalicə et!', 2400);
+    }
+  });
+}
+
+/* ---------------------------------------------------------------------
+   Healing: plasters slap on, marks vanish, meter resets
+   --------------------------------------------------------------------- */
+function heal() {
+  if (mode !== 'play' || healing || fly.active) return;
+  SFX.pick();
+  if (damage <= 0 && !marks.size) {
+    say('Mən artıq sağlamam, sağ olun!', 1600);
+    const p = faceXY(200, 190);
+    for (let i = 0; i < 6; i++) FX.spawn({ kind: 'ting', x: p.x + rand(-60, 60), y: p.y + rand(-60, 60), vy: -30, size: rand(6, 11), color: '#fff', life: 0.8 });
+    return;
+  }
+  healing = true; arrowsDisabled(true);
+  $('healBtn').classList.remove('pulse');
+  bubbleEl.classList.remove('show');
+  const seq = ['pl1', 'pl2', 'pl2b', 'pl3'];
+  seq.forEach(function (id, i) {
+    after(0.05 + i * 0.28, function () {
+      $(id).classList.add('on'); SFX.rip();
+      setTimeout(SFX.pop, 120);
+      sp.y.vel += 70; sp.sy.v = 0.93;
+      const p = faceXY(200 + (i - 1.5) * 28, 190);
+      FX.spawn({ kind: 'plus', x: p.x, y: p.y, vy: -70, size: 8, color: '#ff4a4a', life: 0.8 });
+    });
+  });
+  // the actual healing moment
+  after(1.35, function () {
+    SFX.heal();
+    marks.forEach(function (id) { setMark(id, false); });
+    marks.clear();
+    damage = 0; ko = false; stage = 0; hurt = 0;
+    $('kometer').classList.remove('ko');
+    // letters switch off one by one (bottom to top cascade)
+    const letters = $('kometer').children;
+    for (let i = 6; i >= 0; i--) {
+      (function (idx) { after((6 - idx) * 0.07, function () { letters[idx].classList.remove('on'); if (idx % 2 === 0) SFX.tick(0.8 + idx * 0.05); }); })(i);
+    }
+    litCount = 0;
+    birdBoost = 0;
+    sp.sy.v = 1.12; sp.sx.v = 0.94; sp.rot.vel = 0;
+    const p = faceXY(200, 190);
+    for (let i = 0; i < 12; i++) FX.spawn({ kind: i % 2 ? 'heart' : 'plus', x: p.x + rand(-70, 70), y: p.y + rand(-30, 60), vx: rand(-30, 30), vy: rand(-120, -50), size: rand(7, 12), color: i % 2 ? '#ff7aa8' : '#7bf06b', life: rand(1, 1.6), drag: 0.5 });
+    say('Ahh, çox sağ olun! Yaxşıyam!', 2000);
+    SFX.boing();
+  });
+  after(2.3, function () {
+    ['pl1', 'pl2', 'pl2b', 'pl3'].forEach(function (id) { $(id).classList.remove('on'); });
+    healing = false;
+    if (!fly.active) arrowsDisabled(false);
+  });
+}
+
+/* ---------------------------------------------------------------------
+   UI: arrows, weapon dropdown, name dialog, sound button, keyboard
+   --------------------------------------------------------------------- */
+const arrowBtns = Array.prototype.slice.call(document.querySelectorAll('.arrow'));
+// Buttons stay enabled (no flicker while spamming); input is simply ignored while busy.
+// A tap that arrives while the weapon is recoiling is queued so rapid tapping feels snappy.
+function arrowsDisabled() { /* intentionally visual-free */ }
+let queuedDir = null;
+
+function requestHit(dir) {
+  if (mode !== 'play' || healing) return;
+  if (fly.active) { if (fly.phase === 'recoil' && weapon) queuedDir = dir; return; }
+  if (!weapon) {
+    // friendly nudge: no weapon chosen yet
+    SFX.nope();
+    toast('Əvvəlcə silah seçin!', 1600);
+    const wp = $('wpanel'); wp.classList.remove('attn'); void wp.offsetWidth; wp.classList.add('attn', 'hint');
+    return;
+  }
+  bubbleEl.classList.remove('show');
+  startFly(dir);
+}
+
+arrowBtns.forEach(function (b) {
+  const dir = +b.getAttribute('data-dir');
+  // pointerdown = instant response on touch; click covers keyboard activation (detail 0)
+  b.addEventListener('pointerdown', function (e) { e.preventDefault(); b.classList.add('press'); requestHit(dir); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) { b.addEventListener(ev, function () { b.classList.remove('press'); }); });
+  b.addEventListener('click', function (e) { if (e.detail === 0) requestHit(dir); });
+});
+
+// --- weapon dropdown ---
+const wlist = $('wlist'), wbtn = $('wbtn');
+WEAPONS.forEach(function (w, i) {
+  const li = document.createElement('li');
+  li.setAttribute('role', 'option'); li.tabIndex = 0; li.dataset.id = w.id;
+  li.innerHTML = w.svg + '<span>' + w.name + '</span>';
+  li.addEventListener('click', function (e) { e.stopPropagation(); chooseWeapon(w.id); });
+  li.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); chooseWeapon(w.id); } });
+  wlist.appendChild(li);
+});
+function toggleList(open) {
+  const willOpen = open == null ? wlist.hidden : open;
+  wlist.hidden = !willOpen;
+  wbtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  if (willOpen) { SFX.open(); const sel = wlist.querySelector('.sel') || wlist.firstChild; if (sel && sel.focus) sel.focus({ preventScroll: true }); }
+}
+wbtn.addEventListener('click', function (e) { e.stopPropagation(); if (mode === 'play') toggleList(); });
+document.addEventListener('pointerdown', function (e) { if (!wlist.hidden && !wlist.contains(e.target) && e.target !== wbtn && !wbtn.contains(e.target)) toggleList(false); });
+
+function chooseWeapon(id, silent) {
+  weapon = WEAPONS.filter(function (w) { return w.id === id; })[0];
+  Store.set('weapon', id);
+  $('wshow').innerHTML = weapon.svg;
+  $('wname').textContent = weapon.name;
+  Array.prototype.forEach.call(wlist.children, function (li) { li.classList.toggle('sel', li.dataset.id === id); });
+  $('wpanel').classList.remove('hint', 'attn');
+  wlist.hidden = true; wbtn.setAttribute('aria-expanded', 'false');
+  if (silent) return;
+  SFX.pick();
+  // small bounce on the big preview
+  const sv = $('wshow').firstChild; if (sv && sv.animate) sv.animate([{ transform: 'scale(.5) rotate(-20deg)' }, { transform: 'scale(1.15)' }, { transform: 'scale(1)' }], { duration: 320, easing: 'ease-out' });
+}
+
+// --- K.O.-METR ---
+KO_LETTERS.forEach(function (ch) {
+  const d = document.createElement('div'); d.className = 'ko-l'; d.textContent = ch; $('kometer').appendChild(d);
+});
+
+// --- heal button ---
+$('healBtn').addEventListener('click', heal);
+
+// --- sound button ---
+const soundBtn = $('soundBtn');
+function syncSoundBtn() { soundBtn.classList.toggle('muted', Sound.isMuted()); }
+soundBtn.addEventListener('click', function () {
+  Sound.setMuted(!Sound.isMuted()); syncSoundBtn(); Sound.ensure();
+  if (!Sound.isMuted()) SFX.pick();
+});
+syncSoundBtn();
+
+// --- name dialog ---
+const nameInput = $('nameInput'), nameDialog = $('nameDialog');
+nameInput.value = victim === 'praktikant' ? '' : victim;
+function confirmName() {
+  const v = nameInput.value.replace(/\s+/g, ' ').trim();
+  victim = v || 'praktikant';
+  Store.set('name', victim);
+  $('victimName').textContent = victim;
+  nameDialog.classList.add('hide');
+  mode = 'play';
+  Sound.ensure(); SFX.pick();
+  setTimeout(function () { nameDialog.style.display = 'none'; }, 400);
+  after(0.5, function () { say('Salam! Mən ' + victim + ', sizin yeni stajyorunuz!', 2400); });
+  if (!weapon) {
+    after(0.9, function () { $('wpanel').classList.add('hint'); toast('Silah seçin və oxlara toxunun', 2200); });
+  }
+}
+$('nameOk').addEventListener('click', confirmName);
+nameInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); confirmName(); } });
+$('victimName').textContent = victim;
+
+// --- keyboard ---
+window.addEventListener('keydown', function (e) {
+  if (mode !== 'play' || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key;
+  if (k === 'Escape') { toggleList(false); return; }
+  if (!wlist.hidden) return;
+  if (/^[1-7]$/.test(k)) { chooseWeapon(WEAPONS[+k - 1].id); return; }
+  if (k === 'ArrowLeft' || k === 'a' || k === 'A') { e.preventDefault(); requestHit(-1); }
+  else if (k === 'ArrowRight' || k === 'd' || k === 'D') { e.preventDefault(); requestHit(1); }
+  else if (k === 'ArrowUp' || k === 'w' || k === 'W' || k === ' ') { e.preventDefault(); requestHit(0); }
+  else if (k === 'h' || k === 'H') heal();
+});
+
+// --- misc input niceties ---
+window.addEventListener('pointermove', function (e) { pointer.x = e.clientX; pointer.y = e.clientY; pointer.has = true; }, { passive: true });
+document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+document.addEventListener('contextmenu', function (e) { if (e.target.closest && e.target.closest('.arrow,.wpanel,.heal')) e.preventDefault(); });
+window.addEventListener('resize', function () { FX.resize(); });
+if (window.ResizeObserver) new ResizeObserver(function () { FX.resize(); }).observe(gadget);
+
+/* ---------------------------------------------------------------------
+   Main loop (requestAnimationFrame). dt freezes during hit-stop.
+   --------------------------------------------------------------------- */
+let lastTs = performance.now();
+function frame(ts) {
+  requestAnimationFrame(frame);
+  const real = Math.min(0.05, Math.max(0, (ts - lastTs) / 1000)); lastTs = ts;
+  let dt = real;
+  if (hitStop > 0) { hitStop -= real; dt = 0; }
+  time += dt;
+
+  runTimers(dt);
+  updateFly(dt);
+  updateFace(dt);
+  FX.update(dt);
+  FX.draw();
+
+  // trauma-based screen shake + punch-in zoom (real time so it never sticks)
+  if (trauma > 0 || zoom > 0.0005) {
+    const m = trauma * trauma, mag = 16 * m;
+    shaker.style.transform = 'translate(' + (rand(-1, 1) * mag).toFixed(1) + 'px,' + (rand(-1, 1) * mag).toFixed(1) + 'px) rotate(' + (rand(-1, 1) * m * 1.6).toFixed(2) + 'deg) scale(' + (1 + zoom).toFixed(4) + ')';
+    if (dt > 0) { trauma = Math.max(0, trauma - real * 1.7); zoom *= Math.exp(-real * 9); }
+  } else if (shaker.style.transform) { shaker.style.transform = ''; zoom = 0; }
+  if (flash > 0.002) { $('flash').style.opacity = flash.toFixed(3); flash *= Math.exp(-real * 12); }
+  else if (flash !== 0) { flash = 0; $('flash').style.opacity = 0; }
+}
+
+/* ---------------------------------------------------------------------
+   Boot
+   --------------------------------------------------------------------- */
+$('hits').textContent = totalHits;
+const savedWeapon = Store.get('weapon', null);
+if (savedWeapon && WEAPONS.some(function (w) { return w.id === savedWeapon; })) chooseWeapon(savedWeapon, true);
+FX.resize();
+requestAnimationFrame(function (ts) { lastTs = ts; frame(ts); });
+// no auto-focus on touch screens: it would pop the keyboard open and squash the layout
+if (!(window.matchMedia && matchMedia('(pointer:coarse)').matches)) setTimeout(function () { try { nameInput.focus({ preventScroll: true }); } catch (e) {} }, 300);
+})();
+</script>
+</body>
+</html>
